@@ -9,10 +9,12 @@
 <table>
 
 <tr>
-    <td>feature</td>
+    <th>feature</th>
+     <th>th</th>
 </tr>
 
 <tr>
+    <td>time zone abreviation</td>
     <td>time zone abreviation</td>
 </tr>
 
