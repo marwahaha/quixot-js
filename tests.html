@@ -15,38 +15,42 @@ and open the template in the editor.
         <div>Tests</div>
 
 
-            <script src ="lib/fix.js"></script>
+            <script src ="lib/init.js"></script>
             <script src ="lib/util.js"></script>
             <script src ="lib/ip.js"></script>
             <script src ="lib/browser.js"></script>
+            <script src ="lib/fullscreen.js"></script>
+            <script src ="lib/end.js"></script>
 
+        <div id="browser"></div>
+        <div id="browser_info"></div>
+
+
+        <br /><br /><br />
+        YOUR FINGERPRINT:
+        <div id="fng" style="font-weight: bold; width: 100%;     word-wrap: break-word;"></div>
     </body>
 
-    <div id="browser_info">
+
 
 
     <script>
-        Jentil.browser.init(function () {
-            var text = '';
-            text+= Jentil.browser.debugLine();
+        var txt = '<div style="width: 100%; word-wrap: break-word; font-family: monospace">';
+        var obj = quixot.getFingerPrintData();
+        for(var i in obj) {
 
-            for(var i in Jentil.browser.has) {
-                text+='\n has ' + i + " : " + Jentil.browser.has[i]  + '\n';
-            }
-
-            for(var i in Jentil.browser.get) {
-                text+=' get ' + i + " : " + Jentil.browser.get[i]  + '\n';
-            }
-
-            for(var i in Jentil.browser.is) {
-                text+=' is ' + i + " : " + Jentil.browser.is[i]  + '\n';
-            }
+            txt+= i + '=' + quixot.stringify(obj[i]) + '<br /><br />';
+        }
+        txt += '</div>';
 
 
-            text+= '\n\n\n identifier: \n\n' + Jentil.browser.getId() + "\n\n";
+        document.getElementById('browser_info').innerHTML = quixot.fingerprint();
 
-            document.getElementById('browser_info').innerHTML = '<pre>' + text + '</pre>'
-        });
+        document.getElementById('fng').innerHTML =txt;
+
+
+        document.getElementById('browser').innerHTML = quixot.browser.name + '    version ' + quixot.browser.version +
+                        '    OS:   ' + quixot.os.name + ' version: ' + quixot.os.version;
     </script>
 
 

@@ -1,6 +1,24 @@
-Fingerprint creation:
+<h1>quixot</h1>
 
-time zone abreviation
+
+<h3> fingerprint() </h3>
+
+<h2>Fingerprint creation:</h2>
+
+
+<table>
+
+<tr>
+    <td>feature</td>
+</tr>
+
+<tr>
+    <td>time zone abreviation</td>
+</tr>
+
+
+</table>
+
 ip (retrieved via js, if exists)
 unsupported javascript engine features (like console, Object.keys)
 computer name (for IE versions)
@@ -11,14 +29,16 @@ detected browser version
 screen info (width, height, colorDepth, pixelRation)
 navigator objects and method names (including user agent, appVersion...)
 mime types objects and method names
-installed plugins
-performance objects and method names
+
+installed plugins based on the recursive depth [minimum 4 for safari on windows]
+
 memory properties (no values, since it may change often)
 performance timing method names (not the values, since it may change at runtime)
 battery method names (no values, since it may change often)
 media devices properties
 chrome properties
 netscape properties
+canvas data url
 webgl UNMASKED_RENDERER_WEBGL
 webgl VERSION
 webgl SHADING_LANGUAGE_VERSION
