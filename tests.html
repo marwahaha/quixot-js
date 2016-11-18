@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    </head>
+    <body>
+        <div>Tests</div>
+
+
+            <script src ="lib/fix.js"></script>
+            <script src ="lib/util.js"></script>
+            <script src ="lib/ip.js"></script>
+            <script src ="lib/browser.js"></script>
+
+    </body>
+
+    <div id="browser_info">
+
+
+    <script>
+        Jentil.browser.init(function () {
+            var text = '';
+            text+= Jentil.browser.debugLine();
+
+            for(var i in Jentil.browser.has) {
+                text+='\n has ' + i + " : " + Jentil.browser.has[i]  + '\n';
+            }
+
+            for(var i in Jentil.browser.get) {
+                text+=' get ' + i + " : " + Jentil.browser.get[i]  + '\n';
+            }
+
+            for(var i in Jentil.browser.is) {
+                text+=' is ' + i + " : " + Jentil.browser.is[i]  + '\n';
+            }
+
+
+            text+= '\n\n\n identifier: \n\n' + Jentil.browser.getId() + "\n\n";
+
+            document.getElementById('browser_info').innerHTML = '<pre>' + text + '</pre>'
+        });
+    </script>
+
+
+
+   
+</html>
