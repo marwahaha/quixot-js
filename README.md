@@ -19,6 +19,15 @@
 
 </table>
 
+
+<pre>
+//TO DO... page in progress
+getFingerPrintData: function () {
+            return fingerPrintData;
+        },
+
+</pre>
+
 ip (retrieved via js, if exists)
 unsupported javascript engine features (like console, Object.keys)
 computer name (for IE versions)
