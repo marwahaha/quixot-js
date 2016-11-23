@@ -12,22 +12,33 @@ and open the template in the editor.
 
     </head>
     <body>
-        <div>Tests</div>
+
 
 
             <script src ="lib/init.js"></script>
-            <script src ="lib/util.js"></script>
             <script src ="lib/ip.js"></script>
             <script src ="lib/browser.js"></script>
             <script src ="lib/fullscreen.js"></script>
             <script src ="lib/end.js"></script>
 
-        <div id="browser"></div>
-        <div id="browser_info"></div>
+        <div id="fingerprint_identifier" style="font-weight: normal; width: 100%; word-wrap: break-word;"></div>
+            <br /><br /><br />
+
+            <div id="browser"  style="font-weight: normal; width: 100%; word-wrap: break-word;"></div>
 
 
-        <br /><br /><br />
-        YOUR FINGERPRINT:
+            <br /><br /><br />
+            fingerprint.text
+
+        <div id="fingerprint_text"  style="font-weight: bold; width: 100%;     word-wrap: break-word;"></div>
+
+
+
+            fingerprint.numbers
+        <div id="fingerprint_numbers"  style="font-weight: bold; width: 100%;     word-wrap: break-word;"></div>
+
+
+
         <div id="fng" style="font-weight: bold; width: 100%;     word-wrap: break-word;"></div>
     </body>
 
@@ -35,22 +46,18 @@ and open the template in the editor.
 
 
     <script>
-        var txt = '<div style="width: 100%; word-wrap: break-word; font-family: monospace">';
-        var obj = quixot.getFingerPrintData();
-        for(var i in obj) {
-
-            txt+= i + '=' + quixot.stringify(obj[i]) + '<br /><br />';
-        }
-        txt += '</div>';
 
 
-        document.getElementById('browser_info').innerHTML = quixot.fingerprint();
 
-        document.getElementById('fng').innerHTML =txt;
+document.getElementById('fingerprint_identifier').innerHTML = quixot.fingerprint.identifier();
+        document.getElementById('fingerprint_text').innerHTML = quixot.fingerprint.text();
+        document.getElementById('fingerprint_numbers').innerHTML = quixot.fingerprint.numbers();
+
+        <!--document.getElementById('fng').innerHTML =txt;-->
 
 
         document.getElementById('browser').innerHTML = quixot.browser.name + '    version ' + quixot.browser.version +
-                        '    OS:   ' + quixot.os.name + ' version: ' + quixot.os.version;
+                        '    OS:   ' + quixot.system.os.name + ' version: ' + quixot.system.os.version;
     </script>
 
 

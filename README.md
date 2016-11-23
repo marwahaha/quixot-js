@@ -1,85 +1,156 @@
 <h1>quixot</h1>
+<div>[DISCLAIMER: this library is still under development]</div>
 
 
-<h3> fingerprint() </h3>
 
-<h2>Fingerprint creation:</h2>
+<h2><code>.fingerprint</code></h2>
+
+<h3>main purpose of <code>fingerprint</code> instance is to provide an unique identifier for a given operating system/browser</h3>
+
+<h4>browser scanned features</h4>
+<ul>
+    <li>
+         abreviated time zone
+    </li>
+    <li>
+        unsupported javascript engine features, like Object.keys
+    </li>
+    <li>
+        <code>Math</code> functions and constants (imul support match only for newer browsers)
+    </li>
+    <li>
+        computer name (for IE versions retrieved via ActiveX)
+    </li>
+    <li>
+        installed plugins and supported mime types
+        based on the recursive depth scan
+    </li>
+    <li>
+        webgl support, version , vendor, renderer
+    </li>
+    <li>
+        empty canvas dataUrl, both .png and .jpeg format
+    </li>
+    <li>
+        chrome, netscape specific properties
+    </li>
+    <li>
+       screen info (width, height, colorDepth, pixelRation)
+    </li>
+    <li>
+        browser supported css properties
+    </li>
+    <li>
+        unique property names of supported javascript features
+        (check the .evilUtors) property
+    </li>
+    <li>
+        the <code> evilUtors </code>  are a set of evaluable strings meant to return sensitive information
+        about browser and javascript engine
+    </li>
+</ul>
 
 
-<table>
 
+
+
+
+
+
+
+
+<h4 style="font-family: monospace; font-size: 12px; margin: 0px; padding: 0px">registered tests:</h4>
+<table style="font-family: monospace; font-size: 12px; margin: 0px; padding: 0px">
 <tr>
-    <th>feature</th>
-     <th>th</th>
+    <td>
+        os/browser
+    </td>
+
+    <td>
+        details:
+    </td>
 </tr>
 
 <tr>
-    <td>time zone abreviation</td>
-    <td>time zone abreviation</td>
+    <td>
+       Windows	Chrome	55
+    </td>
+
+    <td>
+       Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.28 Safari/537.36
+    </td>
 </tr>
 
+
+<tr>
+    <td>
+       Windows	Explorer 11
+    </td>
+
+    <td>
+      Mozilla/5.0 (Windows NT 6.1; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; rv:11.0) like Gecko (computer name detected)
+    </td>
+</tr>
+
+<tr>
+    <td>
+       Ubuntu Netscape 5 (Browser)
+    </td>
+
+    <td>
+        Mozilla/5.0 (Linux; Ubuntu 14.04) AppleWebKit/537.36 Chromium/35.0.1870.2 Safari/537.36
+     </td>
+</tr>
+
+
+<tr>
+    <td>
+       Ubuntu Epiphany 3.18
+    </td>
+
+    <td>
+       Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/602.1 (KHTML, like Gecko) Version/8.0 Safari/602.1 Ubuntu/16.04 (3.18.5-0ubuntu1) Epiphany/3.18.5
+     </td>
+</tr>
+
+
+<tr>
+    <td>
+       Ubuntu Firefox 40.0
+    </td>
+
+    <td>
+         Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/53.0.2785.143 Chrome/53.0.2785.143 Safari/537.36
+     </td>
+</tr>
+
+
+<tr>
+    <td>
+       Ubuntu Chromium 53.0.2785.143
+    </td>
+
+    <td>
+        (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/53.0.2785.143 Chrome/53.0.2785.143 Safari/537.36
+    </td>
+</tr>
 
 </table>
 
 
-<pre>
-//TO DO... page in progress
-getFingerPrintData: function () {
-            return fingerPrintData;
-        },
-
-</pre>
-
-ip (retrieved via js, if exists)
-unsupported javascript engine features (like console, Object.keys)
-computer name (for IE versions)
-detected operating system
-detected operating system version
-detected browser name
-detected browser version
-screen info (width, height, colorDepth, pixelRation)
-navigator objects and method names (including user agent, appVersion...)
-mime types objects and method names
-
-installed plugins based on the recursive depth [minimum 4 for safari on windows]
-
-memory properties (no values, since it may change often)
-performance timing method names (not the values, since it may change at runtime)
-battery method names (no values, since it may change often)
-media devices properties
-chrome properties
-netscape properties
-canvas data url
-webgl UNMASKED_RENDERER_WEBGL
-webgl VERSION
-webgl SHADING_LANGUAGE_VERSION
-webgl VENDOR
 
 
 
 
-Latest tests for browser.js:
-
-Windows	Chrome	55
-Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.28 Safari/537.36
 
 
 
-Windows	Explorer 11
-Mozilla/5.0 (Windows NT 6.1; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; rv:11.0) like Gecko
-computer name detected for windows10
 
-Ubuntu Netscape 5 (Browser)            
-Mozilla/5.0 (Linux; Ubuntu 14.04) AppleWebKit/537.36 Chromium/35.0.1870.2 Safari/537.36
 
-Ubuntu Epiphany 3.18                   
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/602.1 (KHTML, like Gecko) Version/8.0 Safari/602.1 Ubuntu/16.04 (3.18.5-0ubuntu1) Epiphany/3.18.5
 
-Ubuntu Firefox 40.0                    
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/53.0.2785.143 Chrome/53.0.2785.143 Safari/537.36
 
-Ubuntu Chromium 53.0.2785.143          
-(X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/53.0.2785.143 Chrome/53.0.2785.143 Safari/537.36
+
+
 
 
 
