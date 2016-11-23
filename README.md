@@ -13,12 +13,12 @@
 
 <div> Usage:
     <div>
-        <pre> quixot.atos(123456789) <pre>
+        <pre> quixot.atos(123456789) </pre>
         <span> output: <code>"mdefghij"</code> </span>
     </div>
 
     <div>
-            <pre> quixot.atos(000000) <pre>
+            <pre> quixot.atos(000000) </pre>
             <span> output: <code>"a"</code> </span>
     </div>
 
@@ -28,7 +28,7 @@
     </div>
 
     <div>
-        <pre> quixot.atos('000000', '!@#$%^&*()+=')<pre>
+        <pre> quixot.atos('000000', '!@#$%^&*()+=')</pre>
         <span> output: <code>"!@#$%^"</code> </span>
     </div>
 </div>
