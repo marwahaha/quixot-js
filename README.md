@@ -23,7 +23,7 @@
     </div>
 
      <div>
-        <pre> quixot.atos('000000')<pre>
+        <pre> quixot.atos('000000')</pre>
         <span> output: <code>"abcdef"</code> </span>
     </div>
 
