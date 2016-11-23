@@ -3,11 +3,41 @@
 
 
 
-<h2><code>.fingerprint</code></h2>
+<h3><code>.atos</code></h3>
+<h4>encode any type of javascript data type (specially numbers) to string </h4>
 
-<h3>main purpose of <code>fingerprint</code> instance is to provide an unique identifier for a given operating system/browser</h3>
+<ul> Params:
+    <li> [data {Number|String|Date|Object|Array|Function} required] </li>
+    <li> [string {String} optional] - a string whose characters will be used for encoding </li>
+</ul>
 
-<h4>browser scanned features</h4>
+<div> Usage:
+    <div>
+        <pre> quixot.atos(123456789) <pre>
+        <span> output: <code>"mdefghij"</code> </span>
+    </div>
+
+    <div>
+            <pre> quixot.atos(000000) <pre>
+            <span> output: <code>"a"</code> </span>
+    </div>
+
+     <div>
+        <pre> quixot.atos('000000')<pre>
+        <span> output: <code>"abcdef"</code> </span>
+    </div>
+
+    <div>
+        <pre> quixot.atos('000000', '!@#$%^&*()+=')<pre>
+        <span> output: <code>"!@#$%^"</code> </span>
+    </div>
+</div>
+
+<h3><code>.fingerprint</code></h3>
+
+<h4>main purpose of <code>fingerprint</code> instance is to provide an unique identifier for a given operating system/browser</h4>
+
+<h5>browser scanned features</h5>
 <ul>
     <li>
          abreviated time zone
@@ -16,7 +46,7 @@
         unsupported javascript engine features, like Object.keys
     </li>
     <li>
-        <code>Math</code> functions and constants (imul support match only for newer browsers)
+        <code>Math</code> functions and constants (<code>imul</code> support match only for newer browsers)
     </li>
     <li>
         computer name (for IE versions retrieved via ActiveX)
