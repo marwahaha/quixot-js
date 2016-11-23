@@ -11,27 +11,15 @@
     <li> [string {String} optional] - a string whose characters will be used for encoding </li>
 </ul>
 
-<div> Usage:
-    <div>
-        <pre> quixot.atos(123456789) </pre>
-        <span> output: <code>"mdefghij"</code> </span>
-    </div>
 
-    <div>
-            <pre> quixot.atos(000000) </pre>
-            <span> output: <code>"a"</code> </span>
-    </div>
+<ul> Usage:
+      <li> <code> quixot.atos(123456789); /*outputs  "mdefghij"*/ </code> </li>
+      <li>  <code> quixot.atos(000000); /*outputs  "a"*/ </code> </li>
+       <li>  <code> quixot.atos('000000'); /*outputs "abcdef"*/ </code> </li>
+       <li>  <code> quixot.atos('000000', '!@#$%^&*()+='); /*outputs "!@#$%^"*/ </code> </li>
 
-     <div>
-        <pre> quixot.atos('000000')</pre>
-        <span> output: <code>"abcdef"</code> </span>
-    </div>
+</ul>
 
-    <div>
-        <pre> quixot.atos('000000', '!@#$%^&*()+=')</pre>
-        <span> output: <code>"!@#$%^"</code> </span>
-    </div>
-</div>
 
 <h3><code>.fingerprint</code></h3>
 
