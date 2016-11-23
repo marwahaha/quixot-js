@@ -13,10 +13,10 @@
 
 
 <ul> Usage:
-      <li> <code> quixot.atos(123456789); /*outputs  "mdefghij"*/ </code> </li>
-      <li>  <code> quixot.atos(000000); /*outputs  "a"*/ </code> </li>
-       <li>  <code> quixot.atos('000000'); /*outputs "abcdef"*/ </code> </li>
-       <li>  <code> quixot.atos('000000', '!@#$%^&*()+='); /*outputs "!@#$%^"*/ </code> </li>
+      <li> <code> quixot.atos(123456789); /*"mdefghij"*/ </code> </li>
+      <li>  <code> quixot.atos(000000); /*"a"*/ </code> </li>
+       <li>  <code> quixot.atos('000000'); /*"abcdef"*/ </code> </li>
+       <li>  <code> quixot.atos('000000', '!@#$%^&*()+='); /*"!@#$%^"*/ </code> </li>
 
 </ul>
 
