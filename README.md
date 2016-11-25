@@ -3,7 +3,7 @@
 
 
 
-<h3><code>.atos</code></h3>
+<h3><code>.atos()</code></h3>
 <h4>encode any type of javascript data type (specially numbers) to string </h4>
 
 <ul> Params:
@@ -21,7 +21,7 @@
 </ul>
 
 
-<h3><code>.fingerprint</code></h3>
+<h3><code>Fingerprint</code></h3>
 
 <h4>main purpose of <code>fingerprint</code> instance is to provide an unique identifier for a given operating system/browser</h4>
 

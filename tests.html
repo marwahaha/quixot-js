@@ -16,10 +16,18 @@ and open the template in the editor.
 
 
             <script src ="lib/init.js"></script>
+            <script src ="lib/logger.js"></script>
+            <script src ="lib/urldecoder.js"></script>
             <script src ="lib/ip.js"></script>
             <script src ="lib/browser.js"></script>
             <script src ="lib/fullscreen.js"></script>
-            <script src ="lib/end.js"></script>
+            <script src ="lib/cookie.js"></script>
+            <script src ="lib/cache.js"></script>
+            <script src ="lib/test.js"></script>
+
+
+            <!--<script src ="lib/brock.js"></script>-->
+
 
         <div id="fingerprint_identifier" style="font-weight: normal; width: 100%; word-wrap: break-word;"></div>
             <br /><br /><br />
@@ -49,15 +57,15 @@ and open the template in the editor.
 
 
 
-document.getElementById('fingerprint_identifier').innerHTML = quixot.fingerprint.identifier();
-        document.getElementById('fingerprint_text').innerHTML = quixot.fingerprint.text();
-        document.getElementById('fingerprint_numbers').innerHTML = quixot.fingerprint.numbers();
+document.getElementById('fingerprint_identifier').innerHTML = quixot.Fingerprint.identifier();
+        document.getElementById('fingerprint_text').innerHTML = quixot.Fingerprint.text();
+        document.getElementById('fingerprint_numbers').innerHTML = quixot.Fingerprint.numbers();
 
         <!--document.getElementById('fng').innerHTML =txt;-->
 
 
-        document.getElementById('browser').innerHTML = quixot.browser.name + '    version ' + quixot.browser.version +
-                        '    OS:   ' + quixot.system.os.name + ' version: ' + quixot.system.os.version;
+        document.getElementById('browser').innerHTML = quixot.Browser.name + '    version ' + quixot.Browser.version +
+                        '    OS:   ' + quixot.System.os.name + ' version: ' + quixot.System.os.version;
     </script>
 
 
