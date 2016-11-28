@@ -30,13 +30,11 @@ quixot.Logger.setURLAccessKey('customKey');
     <li> [config {Object} optional] - configuration data, default will be <code>defaultConfig</code> </li>
 </ul>
 
-<ul> Usage:
-      <li>
-          <code>
-              var myLogger = quixot.Logger.getInstance('TestLogger');
-          </code>
-      </li>
-</ul>
+Usage:
+<pre>
+  var myLogger = quixot.Logger.getInstance('TestLogger');
+</pre>
+
 
 
 <h4 id="logInstance"><code>LogInstance {private access}</code></h4>
@@ -61,33 +59,46 @@ Usage:
   log4CustomerSupport.trace('by calling in console');
   log4CustomerSupport.trace('quixot.Logger.getInstance(\'log4CustomerSupport\').getLogs().trace');
 </pre>
-3. ask you customer to access the webpage using the following query param:
+3. ask your customer to access the webpage using the following query param:
 <code> http://domain/custompage?mySecretKey={"log4CustomerSupport":{"fileAppender":true}}</code>
 to view all logs of that specific logger or <code>mySecretKey={"log4CustomerSupport":{"info": {"fileAppender":true}} }</code>
 to display on screen only info messages for <code>log4CustomerSupport</code>
 or <code>mySecretKey={"ALL":{"fileAppender":true}}</code> to view all logs
 
-
-<h3><code>.atos(data, String)</code></h3>
+<h3><code>Util</code></h3>
+<h4><code>atos(data, String)</code></h4>
 <h5>encode any type of javascript data type (specially numbers) to string </h5>
-
 <ul> Params:
     <li> [data {Number|String|Date|Object|Array|Function} required] </li>
     <li> [string {String} optional] - a string whose characters will be used for encoding </li>
 </ul>
-
-
-<ul> Usage:
-      <li> <code> quixot.atos(123456789); /*"mdefghij"*/ </code> </li>
-      <li>  <code> quixot.atos(000000); /*"a"*/ </code> </li>
-      <li>  <code> quixot.atos('000000'); /*"abcdef"*/ </code> </li>
-      <li>  <code> quixot.atos('000000', '!@#$%^&*()+='); /*"!@#$%^"*/ </code> </li>
+Usage:
+<pre>
+    quixot.atos(123456789); /*"mdefghij"*/
+    quixot.atos(000000); /*"a"*/
+    quixot.atos('000000'); /*"abcdef"*/
+    quixot.atos('000000', '!@#$%^&*()+='); /*"!@#$%^"*/
+</pre>
+<h4><code>incr(asfloat)</code></h4>
+<h5>increments an unique number</h5>
+<ul> Params:
+    <li> [asfloat {Boolean} optional] </li>
 </ul>
+Usage:
+<pre>
+    quixot.Util.incr(true); /*30.07000000000001*/
+    quixot.Util.incr();     /*31*/
+</pre>
 
 
 <h3><code>Fingerprint</code></h3>
-
 <h4>main purpose of <code>fingerprint</code> instance is to provide an unique identifier for a given operating system/browser</h4>
+<ul> Methods:
+    <li> <code>data()</code>       - returns the full scanned properties </li>
+    <li> <code>text()</code>       - returns the text to compose the fingerprint</li>
+    <li> <code>numbers()</code>    - returns numbers from text() </li>
+    <li> <code>identifier()</code> - returns the unique identifier </li>
+</ul>
 
 <h5>browser scanned features</h5>
 <ul>

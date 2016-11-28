@@ -110,7 +110,7 @@
             <div id="fingerprint_text" class="bigtext"></div>
 
             <h2>numbers()</h2>
-            <div id="fingerprint_numbers" class="size12"></div>
+            <div id="fingerprint_numbers" class="bigtext"></div>
 
 
 
@@ -147,9 +147,9 @@
         var myLogger = quixot.Logger.getInstance('TestLogger', false, function (data) {
             // console.log(data);
         });
-//        myLogger.log('info', 'info level log');
+        myLogger.log('info', 'info level log');
         // console.log(myLogger.getLogs().info.length, 1)
-//        myLogger.log('custom_level', 'some custom log');
+        myLogger.log('custom_level', 'some custom log');
         // console.log(myLogger.getLogs().info.length, 2)
 //        myLogger.warn('custom warn message');
         // console.log(myLogger.getLogs().error.length, 1)
