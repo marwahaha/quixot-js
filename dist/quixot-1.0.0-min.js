@@ -601,15 +601,19 @@ var quixot = (function(context){
             text: getFingerPrintText,
             numbers: getFingerprintNumbers
         },
-        atos: numberToString,
-        serialize: serialize,
-        simplify: simplify,
-        isPrimitive: isPrimitive,
-        isFunction: isFunction,
-        objKeys: objKeys,
-        isArray: isArray,
-        encodeObject: encodeObject,
-        stringify: stringify,
+        Util: {
+            atos: numberToString,
+            serialize: serialize,
+            simplify: simplify,
+            isPrimitive: isPrimitive,
+            isFunction: isFunction,
+            objKeys: objKeys,
+            isArray: isArray,
+            encodeObject: encodeObject,
+            stringify: stringify,
+        },
+
+
         _performance: getPerformance,
         _getmemodata: function () {
             return memodata;
@@ -643,7 +647,149 @@ if(typeof module !='undefined') {
 
 
 
-quixot.Logger = (function () {
+/**
+ * Created by alexstf on 1/8/16 for cam4.
+ * Used to decode url format into object
+ */
+
+quixot.URL = (function() {
+
+
+    function decodeString(strd) {
+        return decodeURIComponent(strd)
+    }
+
+    function getVal(val) {
+        if(val.indexOf && val.indexOf(',') > -1) {
+            return (val+'').split(',')
+        }
+        if(+val) {
+            return parseFloat(val);
+        }
+
+        var obj =null;
+        try {
+            obj = JSON.parse(decodeString(val));
+        } catch (ex){
+            obj = null;
+        } finally {
+            if(obj != null) {
+                return obj;
+            }
+        }
+        return val+'';
+
+    }
+
+    function decode(url){
+        if (!url) {
+            return null;
+        }
+        var protocol = false;
+        if(url.indexOf('http://') == 0) {
+            protocol = 'http';
+        }
+        else if(url.indexOf('https://') == 0) {
+            protocol = 'https';
+        } else {
+            protocol = url.split(':')[0];
+        }
+        var _urlParts = url.replace(protocol + '://', '').split('/');
+
+        var response = {},
+
+            arr = _urlParts[_urlParts.length -1].split('?'),
+            lastPage = arr[0];
+
+            if(arr.length > 1) {
+                // console.log(arr);
+                var last = arr[1];
+                var parts = last.split('&');
+
+                if (parts.length >= 1) {
+                    for (var i = 0; i < parts.length; i++) {
+                        var keyVal = parts[i].split('=');
+                        if (keyVal.length > 1) {
+                            response[keyVal[0]] = getVal(keyVal[1]);
+                        } else {
+                            response[keyVal[0]] = false;
+                        }
+                    }
+                }
+            }
+
+
+
+
+
+
+
+
+        return {
+            lastPage: lastPage,
+            parts: _urlParts,
+            url: url,
+            protocol: protocol,
+            params: response
+        };
+    }
+
+    function getParams(url) {
+        console.log(decode(url));
+        return decode(url).params;
+    }
+
+
+    function getDomainFromUrl(url){
+        url = url + ''; //to avoid indexOf failing
+        var domain = (url.indexOf('://') > -1) ? url.split('/')[2] : url.split('/')[0];
+        if(domain){
+            return domain.split(':')[0];
+        }
+        return 'localhost';
+    }
+
+    function currentDomain() {
+        if(typeof document != 'undefined') {
+            if(document.domain){
+                return document.domain;
+            }
+
+            if(document.URL){
+                return getDomainFromUrl(document.URL);
+            }
+
+        }
+        return 'localhost';
+    }
+
+    return {
+        getParams: getParams,
+        getDomainFromUrl: getDomainFromUrl,
+        currentDomain: currentDomain,
+        decode: decode,
+        currentPath: function () {
+            if(typeof  window != 'undefined' && window.location && window.location.pathname){
+                return window.location.pathname
+            }
+            return '';
+        },
+        currentSearch: function () {
+            if(typeof  window != 'undefined' &&  window.location &&  window.location.search){
+                return  window.location.search
+            }
+            return '';
+        },
+        currentData: function () {
+            if(typeof document != 'undefined'){
+                return decode(document.URL);
+            }
+            return {
+                params: {}
+            };
+        }
+    };
+})();quixot.Logger = (function () {
 
 
     var defaultConfiguration = {
@@ -827,8 +973,11 @@ quixot.Logger = (function () {
         },
         setDefaultConfig: function(object) {
             for(var i in object) {
-                 globalConfig[i] = object[i];
+                defaultConfiguration[i] = object[i];
             }
+        },
+        getDefaultConfig: function () {
+            return defaultConfiguration;
         },
         trace: function (message) {
             defaultInstance.trace(message);
@@ -863,139 +1012,13 @@ quixot.Logger = (function () {
     }
 
 })();
-/**
- * Created by alexstf on 1/8/16 for cam4.
- * Used to decode url format into object
- */
-
-quixot.URL = (function() {
+quixot.Cookie = (function(){
 
 
-    function decodeString(strd) {
-        return decodeURIComponent(strd)
-    }
-
-    function getVal(val) {
-        if(val.indexOf && val.indexOf(',') > -1) {
-            return (val+'').split(',')
-        }
-        if(+val) {
-            return parseFloat(val);
-        }
-
-        var obj =null;
-        try {
-            obj = JSON.parse(decodeString(val));
-        } catch (ex){
-            obj = null;
-        } finally {
-            if(obj != null) {
-                return obj;
-            }
-        }
-        return val+'';
-
-    }
-
-    function decode(url){
-        if (!url) {
-            return null;
-        }
-        var protocol = false;
-        if(url.indexOf('http://') == 0) {
-            protocol = 'http';
-        }
-        else if(url.indexOf('https://') == 0) {
-            protocol = 'https';
-        } else {
-            protocol = url.split(':')[0];
-        }
-        var _urlParts = url.replace(protocol + '://', '').split('/');
-
-        var response = {},
-
-            arr = _urlParts[_urlParts.length -1].split('?'),
-            lastPage = arr[0];
-
-            if(arr.length > 1) {
-                // console.log(arr);
-                var last = arr[1];
-                var parts = last.split('&');
-
-                if (parts.length >= 1) {
-                    for (var i = 0; i < parts.length; i++) {
-                        var keyVal = parts[i].split('=');
-                        if (keyVal.length > 1) {
-                            response[keyVal[0]] = getVal(keyVal[1]);
-                        } else {
-                            response[keyVal[0]] = false;
-                        }
-                    }
-                }
-            }
-
-
-
-
-
-
-
-
-        return {
-            lastPage: lastPage,
-            parts: _urlParts,
-            url: url,
-            protocol: protocol,
-            params: response
-        };
-    }
-
-    function getParams(url) {
-        console.log(decode(url));
-        return decode(url).params;
-    }
-
-
-    function getDomainFromUrl(url){
-        url = url + ''; //to avoid indexOf failing
-        var domain = (url.indexOf('://') > -1) ? url.split('/')[2] : url.split('/')[0];
-        if(domain){
-            return domain.split(':')[0];
-        }
-        return 'localhost';
-    }
-
-    function currentDomain() {
-        if(typeof document != 'undefined') {
-            if(document.domain){
-                return document.domain;
-            }
-
-            if(document.URL){
-                return getDomainFromUrl(document.URL);
-            }
-
-        }
-        return 'localhost';
-    }
-
-    return {
-        getParams: getParams,
-        getDomainFromUrl: getDomainFromUrl,
-        currentDomain: currentDomain,
-        decode: decode,
-        currentPath: function () {
-            return window.location.pathname
-        },
-        currentSearch: function () {
-            return window.location.search
-        },
-        currentData: function () {
-            return decode(document.URL);
-        }
-    };
-})();quixot.Cookie = (function(){
     function getCookie(name) {
+        if(typeof document == 'undefined'){
+            return;
+        }
 
         function getCookieValue(offset) {
             var endstr = document.cookie.indexOf(';', offset);
@@ -1028,6 +1051,10 @@ quixot.URL = (function() {
 
     function setCookie(name, value, p_expires, p_path, p_domain, p_secure) {
 
+        if(typeof document == 'undefined'){
+            return;
+        }
+        
         var expires = p_expires ? p_expires : null;
 
         if (typeof expires == 'number') {
@@ -1048,6 +1075,7 @@ quixot.URL = (function() {
 
 
         var cookieStr = name + "=" + escape(value) + cookieSuffix;
+
 
         document.cookie = cookieStr;
 
@@ -1094,7 +1122,11 @@ quixot.Cache = (function () {
             try {
                 r = JSON.parse(r);
             }catch (e) {
-                throw new Error('failed loading cache from ' + r);
+                if(typeof document != 'undefined'){
+                    throw new Error('failed loading cache from ' + r);
+                }
+
+                r = {};
             }
 
             return r;
@@ -1348,8 +1380,9 @@ quixot.Browser = (function () {
 
     var fingerPrintData = {};
 
-    if(typeof quixot != 'undefined' && typeof quixot.fingerprint != 'undefined' && typeof quixot.fingerprint.data != 'undefined') {
-        fingerPrintData = quixot.fingerprint.data();
+    if(typeof quixot != 'undefined' && typeof quixot.Fingerprint != 'undefined' && typeof quixot.Fingerprint.data != 'undefined') {
+        fingerPrintData = quixot.Fingerprint.data();
+
     }
 
     function getWindow() {
@@ -1667,12 +1700,12 @@ quixot.Browser = (function () {
 
 
     fingerPrintData.plugins = pluginsList.sort().join('');
-    fingerPrintData.screen = quixot.encodeObject(quixot.System.screen);
-    fingerPrintData.chrome = quixot.encodeObject(getChrome(), 8);
-    fingerPrintData.netscape = quixot.encodeObject(getNetscape(), 4);
-    fingerPrintData.navigator = quixot.encodeObject(quixot.simplify(getNavigator()));
-    fingerPrintData.plugins = quixot.encodeObject(getNavigator().plugins, 3);
-    fingerPrintData.mimeTypes =  quixot.encodeObject(getNavigator().mimeTypes, 3);
+    fingerPrintData.screen = quixot.Util.encodeObject(quixot.System.screen);
+    fingerPrintData.chrome = quixot.Util.encodeObject(getChrome(), 8);
+    fingerPrintData.netscape = quixot.Util.encodeObject(getNetscape(), 4);
+    fingerPrintData.navigator = quixot.Util.encodeObject(quixot.Util.simplify(getNavigator()));
+    fingerPrintData.plugins = quixot.Util.encodeObject(getNavigator().plugins, 3);
+    fingerPrintData.mimeTypes =  quixot.Util.encodeObject(getNavigator().mimeTypes, 3);
 
 
     quixot.Fingerprint.data = function () {
@@ -1704,7 +1737,288 @@ quixot.Browser = (function () {
 
 
 
-quixot._fullscreenmethods = (function () {
+quixot.Test = (function (q) {
+    var config = {
+        debug: true,
+        maxListSize: 20,
+        strlist : 'abcdefghihklmnopqrstuvxyz',
+        logging: quixot.Logger.getDefaultConfig()
+    }
+
+
+    var memoData = {
+        strings: [],
+        objects: [],
+    };
+
+    function randStrExist(value) {
+        return memoData.strings.indexOf(value+'') > -1
+    }
+
+
+    function saveStr(value) {
+        return memoData.strings.push(value+'');
+    }
+
+    function randomString(){
+        var date = new Date();
+        maxrand.str ++;
+        var sum = q.Util.atos(randInt(), config.strlist) + ''
+                + q.Util.atos(date.getMilliseconds(), config.strlist) + ''
+                + q.Util.atos(date.getMinutes(), config.strlist) + ''
+                + q.Util.atos(date.getHours(), config.strlist) + ''
+                + q.Util.atos(date.getDay(), config.strlist) + ''
+                + q.Util.atos(date.getDate(), config.strlist) + ''
+                + q.Util.atos(date.getMonth(), config.strlist) + ''
+                + q.Util.atos(date.getFullYear(), config.strlist) + ''
+                + q.Util.atos(date.getYear(), config.strlist) + ''
+            ;
+
+        return sum;
+
+    }
+
+    function monkey(strdata, iterations) {
+        // console.log('prepare ' + iterations);
+        // // if(!iterations) {
+        //     return;
+        // }
+
+        var calls = [];
+        for(var i = 0 ; i < iterations; i++) {
+            console.log('prepare ' + i);
+            console.log(randNr() + randomString() + randInt());
+
+            console.log(randListInt());
+
+             var tocalll = strdata.replace(/{string}/g, '"' + randomString()+ '"' )
+            //         .replace(/{number}/g, randNr() )
+                    .replace(/{integer}/g, randInt() )
+                    .replace(/{integerList}/g, JSON.stringify(randListInt()) )
+            //         .replace(/{numberList}/g, JSON.stringify(randListNr()) )
+            //         .replace(/{stringList}/g, JSON.stringify(randListString()) )
+                    .replace(/{objectList}/g, JSON.stringify(randListObj()) )
+            //         .replace(/{object}/g, JSON.stringify(randObj()) )
+                     .replace(/{any}/g, randAny() )
+            //     ;
+            // console.log('prepare ' + tocalll);
+             calls.push(tocalll);
+
+
+            eval(tocalll);
+
+        }
+
+        console.log(calls);
+
+//         setTimeout(function () {
+//
+//
+//             if(config.debug) {
+//                 console.log(iterations + 'tocall = ' + tocalll);
+//
+//             }
+//
+//             eval(tocalll);
+//             monkey(strdata, iterations -1);
+//         }, 2);
+
+    }
+
+
+    var nodeAssert;
+    if(typeof GLOBAL != 'undefined'){
+        try {
+            nodeAssert = require('assert');
+        }catch (e){
+            nodeAssert = false;
+        }
+        config.logging.logStack = false;
+    }
+
+
+
+    function equals(a, b) {
+
+        if(nodeAssert){
+            if(config.logging) {
+                quixot.Logger.getInstance('Tests', config.logging)
+                    .info('check if ' + a + ' === ' + b);
+            }
+            nodeAssert(a === b);
+        } else {
+            if(a == b) {
+                if(config.logging) {
+                    quixot.Logger.getInstance('Tests', config.logging)
+                        .info('check if ' + a + ' === ' + b + ' ] SUCCESS');
+                }
+            }
+            else {
+                throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
+            }
+        }
+
+
+        return a === b;
+    }
+
+
+    var maxrand = {
+        nr: 1.5,
+        intg: 10,
+        str: 1,
+        obj: 1,
+        arr: 1
+    }
+
+
+    function randList(maxSize, getter) {
+        var arr = [];
+        var limit = Math.round(Math.random()*maxSize) + 1;
+        for(var i = 0; i < limit; i++) {
+            if(getter) {
+                arr.push(getter());
+            }
+        }
+        return arr;
+    }
+
+
+    function randListNr(maxSize, maxRand) {
+        return randList(maxSize, function () {
+            return randNr(maxRand);
+        })
+    }
+
+
+    function randListInt(maxSize, maxRand) {
+        return randList(maxSize, function () {
+            return randInt();
+        });
+    }
+
+
+    function randListString(maxSize) {
+        if(!maxSize){
+            maxSize = config.maxListSize;
+        }
+        return randList(maxSize, randomString);
+    }
+
+
+    function randListObj(maxSize) {
+        if(!maxSize){
+            maxSize = config.maxListSize;
+        }
+        return randList(maxSize, randObj);
+    }
+
+
+    function randAny() {
+        var lrand = Math.round(Math.random() * 3);
+        switch (lrand) {
+            case 0:
+                return '"' +randomString()+ '"';
+            case 1:
+                return randInt();
+            case 2:
+                return randNr();
+        }
+
+        return randInt();
+    }
+
+
+    function randObj() {
+        maxrand.obj += 1;
+        var lmax = randInt(maxrand.obj);
+
+        var obj = {};
+        for(var i = 0; i < maxrand.obj; i++) {
+            obj[randomString()] = randAny();
+        }
+
+        return obj;
+    }
+
+
+
+
+
+
+    var uniqueVal = q.Cache.getInstance('@qtst').getSafe('lup', 1);
+    try {
+        uniqueVal = parseFloat(uniqueVal);
+    } catch (e) {
+        uniqueVal = new Date().getTime();
+    }
+
+    function incr(asfloat) {
+        if (asfloat) {
+            uniqueVal+=0.01;
+        } else {
+            uniqueVal = parseInt(uniqueVal+1);
+        }
+        q.Cache.getInstance('@qtst').put('lup', uniqueVal);
+        return uniqueVal;
+    }
+    
+
+    function randInt(min, max) {
+       return Math.round(randNr(min, max))
+    }
+
+    /**
+     * always return a new number
+     * @returns {*}
+     */
+    function randNr(min, max) {
+        if(min){
+            if(!+min) {
+                min = 1;
+            }
+
+            if(max){
+                if(!+max) {
+                    max = 2;
+                }
+                return min + (Math.random() * (max - min) );
+            }
+
+            return (Math.random() * min);
+        }
+        return incr();
+    }
+
+
+    q.Util.randNr = randNr,
+    q.Util.randInt = randInt,
+    q.Util.randList = randList,
+    q.Util.randListStr = randListString,
+    q.Util.randListObj = randListObj,
+    q.Util.incr = incr,
+    q.Util.randStr = randomString,
+    q.Util.randAny = randAny,
+    q.Util.randObj = randObj;
+
+
+
+    return {
+        equals: equals,
+        monkey: monkey,
+        config: config,
+        _memo: function () {
+            return {
+                data: memoData,
+                max: maxrand
+            };
+        }
+    }
+
+    /**
+     quixot.test.monkey('console.log({string}, {number}, {integer}, {integerList}, {numberList}, {stringList}, {objectList}, {object})')
+     */
+})(quixot);quixot._fullscreenmethods = (function () {
     var REQUEST_FULLSCREEN_FUNCS = {
         'requestFullscreen': {
             'change': 'onfullscreenchange',

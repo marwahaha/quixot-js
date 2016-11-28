@@ -1,16 +1,31 @@
 {
   "name": "quixot",
-  "version": "1.0.0.beta",
+  "version": "1.0.0",
+  "description": "the missing javascript library",
+  "main": "dist/quixot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alex2stf/quixot-js.git"
+  },
   "keywords": [
-    "util",
-    "functional",
-    "server",
-    "client",
-    "browser"
+    "utils",
+    "random",
+    "string",
+    "browser",
+    "fingerprint",
+    "operating",
+    "system",
+    "fingerprint",
+    "unit",
+    "testing"
   ],
-  "author": "Alexandru.Stefan",
-  "contributors": [],
-  "dependencies": {}
-
-
+  "author": "Alexandru Stefan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alex2stf/quixot-js/issues"
+  },
+  "homepage": "https://github.com/alex2stf/quixot-js#readme"
 }

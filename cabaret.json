@@ -6,7 +6,7 @@
       "@append": ["package.json"],
 
       "outputFiles": [
-        "dist/quixot-latest.js",
+        "dist/quixot.js",
         {
           "path": "dist/quixot-{version}-min.js",
           "validator": "axl.stf.cabaret.validate.ClojureValidator"
@@ -15,12 +15,14 @@
 
       "inputFiles": [
         "lib/init.js",
-        "lib/logger.js",
         "lib/url.js",
+        "lib/logger.js",
+
         "lib/cookie.js",
         "lib/cache.js",
         "lib/ip.js",
         "lib/browser.js",
+        "lib/test.js",
         "lib/gui1.js"
       ]
     }

@@ -1,21 +1,22 @@
-var quixot = require('./dist/quixot.1.0.0.beta.min.js');
+var quixot = require('./dist/quixot.js');
+console.log(quixot);
 
-console.log(quixot.atos('aa'));
+console.log(quixot.Util.atos('aa'));
 
-var eq = quixot.test.equals;
+var eq = quixot.Test.equals;
 
-quixot.atos(5, '123');
-eq(quixot.atos('aa'), 'aa');
-eq(quixot.atos(123), 'md');
-eq(quixot.atos(123456789), 'mdefghij');
-eq(quixot.atos({}), '[object Object]');
-eq(quixot.atos(0000001), 'b');
-eq(quixot.atos('0000001'), 'abcdefb');
-eq(quixot.atos('000000'), 'abcdef');
-quixot.test.monkey('console.log({any})');
-var a = quixot.test.randStr(')#($@');
+quixot.Util.atos(5, '123');
+eq(quixot.Util.atos('aa'), 'aa');
+eq(quixot.Util.atos(123), 'md');
+eq(quixot.Util.atos(123456789), 'mdefghij');
+eq(quixot.Util.atos({}), '[object Object]');
+eq(quixot.Util.atos(0000001), 'b');
+eq(quixot.Util.atos('0000001'), 'abcdefb');
+eq(quixot.Util.atos('000000'), 'abcdef');
+quixot.Test.monkey('console.log({any})');
+//var a = quixot.Util.randStr(')#($@');
 
 
-quixot.test.monkey('console.log({any})', 40);
+//quixot.Test.monkey('console.log({any})', 40);
 
 // console.log(a);

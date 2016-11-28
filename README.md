@@ -1,4 +1,4 @@
-<h1>quixot</h1>
+<h1>quixot-js</h1>
 
 
 <h3><code>Logger</code></h3>
