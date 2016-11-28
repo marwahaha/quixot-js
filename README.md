@@ -1,10 +1,75 @@
 <h1>quixot</h1>
-<div>[DISCLAIMER: this library is still under development]</div>
+
+
+<h3><code>Logger</code></h3>
+
+<h4><code>setURLAccessKey(name)</code></h4>
+<h5>set the value for accessing logger configuration from URL.
+If is set to <code>false</code>, no configuartion can
+be changed by using URL parameters</h5>
+<ul> Params:
+    <li> [name {String} required, the key name] </li>
+</ul>
+
+Usage:
+<pre>
+/*
+this will allow you to put the following query param into url:
+http://localhost/mypage?customKey={"ALL":{"consoleAppender":true}}
+*/
+quixot.Logger.setURLAccessKey('customKey');
+</pre>
 
 
 
-<h3><code>.atos()</code></h3>
-<h4>encode any type of javascript data type (specially numbers) to string </h4>
+<h4><code>getInstance(name, config, callback)</code></h4>
+<h5 href="#logInstance">returns a new logger instance </h5>
+
+<ul> Params:
+    <li> [name {String} required, the name of the instance] </li>
+    <li> [config {Object} optional] - configuration data, default will be <code>defaultConfig</code> </li>
+</ul>
+
+<ul> Usage:
+      <li>
+          <code>
+              var myLogger = quixot.Logger.getInstance('TestLogger');
+          </code>
+      </li>
+</ul>
+
+
+<h4 id="logInstance"><code>LogInstance {private access}</code></h4>
+Usage:
+<pre>
+    myLogger.log('info', 'some message');
+    myLogger.error('error occured');     /* myLogger.log('error', 'error occured'); */
+    myLogger.info('info data');          /* myLogger.log('info', 'info data'); */
+    quixot.Logger.warn('warning');       /* quixot.Logger.getInstance('quixot').log('warn', '111111') */
+    quixot.Logger.trace('bla-bla-bla');   /*quixot.Logger.getInstance('quixot').log('warn', '111111')*/
+</pre>
+
+
+<h5>realtime browser customer support (use case sample)</h5>
+1. Create a urlAccessKey:
+<pre>quixot.Logger.setURLAccessKey('mySecretKey');</pre>
+2. Create a logger instance with no appenders and use it in your webpage:
+<pre>
+  var log4CustomerSupport = quixot.Logger.getInstance('log4CustomerSupport', {consoleAppender: false, fileAppender: false});
+  log4CustomerSupport.trace('this log happens client side');
+  log4CustomerSupport.trace('and client could see stored data');
+  log4CustomerSupport.trace('by calling in console');
+  log4CustomerSupport.trace('quixot.Logger.getInstance(\'log4CustomerSupport\').getLogs().trace');
+</pre>
+3. ask you customer to access the webpage using the following query param:
+<code> http://domain/custompage?mySecretKey={"log4CustomerSupport":{"fileAppender":true}}</code>
+to view all logs of that specific logger or <code>mySecretKey={"log4CustomerSupport":{"info": {"fileAppender":true}} }</code>
+to display on screen only info messages for <code>log4CustomerSupport</code>
+or <code>mySecretKey={"ALL":{"fileAppender":true}}</code> to view all logs
+
+
+<h3><code>.atos(data, String)</code></h3>
+<h5>encode any type of javascript data type (specially numbers) to string </h5>
 
 <ul> Params:
     <li> [data {Number|String|Date|Object|Array|Function} required] </li>
@@ -15,9 +80,8 @@
 <ul> Usage:
       <li> <code> quixot.atos(123456789); /*"mdefghij"*/ </code> </li>
       <li>  <code> quixot.atos(000000); /*"a"*/ </code> </li>
-       <li>  <code> quixot.atos('000000'); /*"abcdef"*/ </code> </li>
-       <li>  <code> quixot.atos('000000', '!@#$%^&*()+='); /*"!@#$%^"*/ </code> </li>
-
+      <li>  <code> quixot.atos('000000'); /*"abcdef"*/ </code> </li>
+      <li>  <code> quixot.atos('000000', '!@#$%^&*()+='); /*"!@#$%^"*/ </code> </li>
 </ul>
 
 

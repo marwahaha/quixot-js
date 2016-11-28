@@ -1,71 +1,176 @@
 <!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
+
 <html>
     <head>
         <title>TODO supply a title</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+        <style>
+
+            div {
+                font-family: sans-serif;
+            }
+            h1 {
+                font-size: 15px;
+                font-family: sans-serif;
+            }
+
+            h2 {
+                font-size: 14px;
+                font-family: sans-serif;
+            }
+
+            .bigtext {
+                font-weight: normal;
+                width: 100%;
+                height: 100px;
+                word-wrap: break-word;
+                overflow: scroll;
+                font-size: 12px;
+            }
+
+            .size12 {
+                font-size: 12px;
+            }
+
+            .size14 {
+                font-size: 14px;
+            }
+
+            #quixotFileAppender {
+                /*position: absolute;*/
+                width: 100%;
+                overflow: scroll;
+                z-index: 9999;
+                background: rgb(205, 205, 205);
+                margin: 0px;
+                bottom: 0px;
+                padding: 4px;
+            }
+
+
+            .row div{
+                display: inline;
+            }
+
+            .row h2{
+                display: inline;
+            }
+        </style>
     </head>
+
+
     <body>
 
 
 
-            <script src ="lib/init.js"></script>
-            <script src ="lib/logger.js"></script>
-            <script src ="lib/urldecoder.js"></script>
-            <script src ="lib/ip.js"></script>
-            <script src ="lib/browser.js"></script>
-            <script src ="lib/fullscreen.js"></script>
-            <script src ="lib/cookie.js"></script>
-            <script src ="lib/cache.js"></script>
-            <script src ="lib/test.js"></script>
+
 
 
             <!--<script src ="lib/brock.js"></script>-->
 
 
-        <div id="fingerprint_identifier" style="font-weight: normal; width: 100%; word-wrap: break-word;"></div>
-            <br /><br /><br />
+            <h1>Logger</h1>
+            <div class="row">
 
-            <div id="browser"  style="font-weight: normal; width: 100%; word-wrap: break-word;"></div>
+                <div class="size12"><code>mySecretKey={"log4CustomerSupport":{"fileAppender":true}}</code></div>
+                <div class="size12"><code>mySecretKey={"log4CustomerSupport":{"info": {"fileAppender":true}} }</code></div>
 
-
-            <br /><br /><br />
-            fingerprint.text
-
-        <div id="fingerprint_text"  style="font-weight: bold; width: 100%;     word-wrap: break-word;"></div>
+                <pre id="quixotFileAppender"></pre>
+            </div>
 
 
+            <h1>Browser</h1>
+            <div class="row">
+                <h2>name</h2>
+                <div id="browser_name" class="size14"></div>
+                <h2>version</h2>
+                <div id="browser_version" class="size14"></div>
+            </div>
 
-            fingerprint.numbers
-        <div id="fingerprint_numbers"  style="font-weight: bold; width: 100%;     word-wrap: break-word;"></div>
+
+            <h1>System</h1>
+            <div class="row">
+                <h2>os.name</h2>
+                <div id="sys_os_name" class="size14"></div>
+                <h2>os.version</h2>
+                <div id="sys_os_version" class="size14"></div>
+            </div>
 
 
 
-        <div id="fng" style="font-weight: bold; width: 100%;     word-wrap: break-word;"></div>
+
+
+            <h1>Fingerprint</h1>
+            <h2>identifier()</h2>
+            <div id="fingerprint_identifier" class="bigtext"></div>
+
+            <h2>text()</h2>
+            <div id="fingerprint_text" class="bigtext"></div>
+
+            <h2>numbers()</h2>
+            <div id="fingerprint_numbers" class="size12"></div>
+
+
+
+
+
+            <script src ="lib/init.js"></script>
+            <script src ="lib/url.js"></script>
+            <!--LOGGER require url params-->
+            <script src ="lib/logger.js"></script>
+
+            <script src ="lib/cookie.js"></script>
+            <script src ="lib/cache.js"></script>
+
+            <script src ="lib/ip.js"></script>
+            <script src ="lib/browser.js"></script>
+            <script src ="lib/test.js"></script>
+            <script src ="lib/gui1.js"></script>
+
     </body>
 
 
 
 
     <script>
-
-
-
-document.getElementById('fingerprint_identifier').innerHTML = quixot.Fingerprint.identifier();
+        document.getElementById('fingerprint_identifier').innerHTML = quixot.Fingerprint.identifier();
         document.getElementById('fingerprint_text').innerHTML = quixot.Fingerprint.text();
         document.getElementById('fingerprint_numbers').innerHTML = quixot.Fingerprint.numbers();
+        document.getElementById('browser_name').innerHTML = quixot.Browser.name;
+        document.getElementById('browser_version').innerHTML = quixot.Browser.version;
+        document.getElementById('sys_os_name').innerHTML = quixot.System.os.name;
+        document.getElementById('sys_os_version').innerHTML = quixot.System.os.version;
 
-        <!--document.getElementById('fng').innerHTML =txt;-->
+
+        var myLogger = quixot.Logger.getInstance('TestLogger', false, function (data) {
+            // console.log(data);
+        });
+//        myLogger.log('info', 'info level log');
+        // console.log(myLogger.getLogs().info.length, 1)
+//        myLogger.log('custom_level', 'some custom log');
+        // console.log(myLogger.getLogs().info.length, 2)
+//        myLogger.warn('custom warn message');
+        // console.log(myLogger.getLogs().error.length, 1)
+//        myLogger.error('error message');
+        // console.log(myLogger.getLogs().error.length, 2)
+        // console.log(myLogger.getLogs().error[0].stack.length,  myLogger.getLogs().error[0].stack.length > 1)
+        // console.log(myLogger.getLogs());
 
 
-        document.getElementById('browser').innerHTML = quixot.Browser.name + '    version ' + quixot.Browser.version +
-                        '    OS:   ' + quixot.System.os.name + ' version: ' + quixot.System.os.version;
+        quixot.Logger.setURLAccessKey('mySecretKey');
+
+        var log4CustomerSupport = quixot.Logger.getInstance('log4CustomerSupport', {consoleAppender: false, fileAppender: false});
+
+        log4CustomerSupport.trace('this log happens client side');
+        log4CustomerSupport.trace('and client could see stored data');
+        log4CustomerSupport.trace('by calling in console');
+        log4CustomerSupport.trace('quixot.Logger.getInstance(\'log4CustomerSupport\').getLogs().trace');
+
+        //    mySecretKey={"ALL":{"fileAppender":true}}
+
+
     </script>
 
 
