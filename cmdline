@@ -1,1 +1,0 @@
- --js lib\init.js --js lib\ip.js --js lib\browser.js --js lib\fullscreen.js  --js lib\test.js  --js_output_file dist\quixot.0.1.beta.min.js
