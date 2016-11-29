@@ -1,15 +1,13 @@
 {
+  "axl.stf.cabaret.HelloTask": "this build is done today",
   "axl.stf.cabaret.Kane": [
     {
-
-
-      "@append": ["package.json"],
-
+      "@extend": ["package.json"],
       "outputFiles": [
         "dist/quixot.js",
         {
           "path": "dist/quixot-{version}-min.js",
-          "validator": "axl.stf.cabaret.validate.ClojureValidator"
+          "writer": "axl.stf.cabaret.validate.GCWriter"
         }
       ],
 
@@ -17,7 +15,6 @@
         "lib/init.js",
         "lib/url.js",
         "lib/logger.js",
-
         "lib/cookie.js",
         "lib/cache.js",
         "lib/ip.js",
@@ -26,5 +23,8 @@
         "lib/gui1.js"
       ]
     }
-  ]
+  ],
+  "axl.stf.cabaret.JsRun": {
+      "file": "dist/quixot.js"
+  }
 }

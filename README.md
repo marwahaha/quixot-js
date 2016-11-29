@@ -1,5 +1,7 @@
 #quixot-js
 
+[![N|Solid](https://raw.githubusercontent.com/alex2stf/quixot-js/master/dali_quixote_great_expectations.png)](https://github.com/alex2stf?tab=repositories)
+
 ## Logger
 
 ### setURLAccessKey(name)

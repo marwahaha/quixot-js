@@ -1,3 +1,25 @@
+/**
+ * TODO add this to logger
+ */
+if(typeof console === 'undefined') {
+    console = {};
+    if (typeof console.log === 'undefined') {
+        console.log = function () {}
+    }
+}
+
+if(typeof JSON === 'undefined'){
+    JSON = {};
+
+    if(typeof JSON.stringify === 'undefined'){
+        JSON.stringify = function () {
+
+        }
+    }
+}
+
+
+
 var quixot = (function(context){
 
     var strType = (typeof 'string') + '',
@@ -118,28 +140,7 @@ var quixot = (function(context){
     };
 
 
-    /**
-     * TODO add this to logger
-     */
-    if(!context.console) {
-        context.console = {};
-        if (!context.console.log) {
-            context.console.log = function () {}
-        }
 
-    }
-    if (!context.Object.keys) {
-        context.Object.keys = function(obj) {
-            var keys = [];
-            for (var i in obj) {
-                if (obj[i]) {
-                    keys.push(i);
-                }
-            }
-            return keys;
-        };
-        fingerPrintData._nsp.push('Object.keys');
-    }
 
 
     /**
@@ -320,6 +321,9 @@ var quixot = (function(context){
         return serialize(obj, stackno, 0, 'true', 'false', '"[funct]"', '"', ',', ':', '[', ']', '{', '}', '[stack]');
     }
 
+    JSON.stringify = function (object) {
+        return stringify(object, 3);
+    }
 
     /**
      * TODO for nodejs
@@ -610,10 +614,8 @@ var quixot = (function(context){
             objKeys: objKeys,
             isArray: isArray,
             encodeObject: encodeObject,
-            stringify: stringify,
+            stringify: stringify
         },
-
-
         _performance: getPerformance,
         _getmemodata: function () {
             return memodata;
@@ -1427,7 +1429,7 @@ quixot.Browser = (function () {
         {string: getNavigator().userAgent, subString: 'MSIE', identity: 'Explorer', versionSearch: 'MSIE'},
         {string: getNavigator().userAgent, subString: 'Gecko', identity: 'Mozilla', versionSearch: 'rv'},
         // for older Netscapes (4-)
-        {string: getNavigator().userAgent, subString: 'Mozilla', identity: 'Netscape', versionSearch: 'Mozilla'},
+        {string: getNavigator().userAgent, subString: 'Mozilla', identity: 'Netscape', versionSearch: 'Mozilla'}
     ];
 
 
@@ -1748,7 +1750,7 @@ quixot.Test = (function (q) {
 
     var memoData = {
         strings: [],
-        objects: [],
+        objects: []
     };
 
     function randStrExist(value) {
