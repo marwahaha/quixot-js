@@ -44,7 +44,9 @@ Usage:
 ###### realtime browser customer support (use case sample)
 
 * Create a urlAccessKey:
-```quixot.Logger.setURLAccessKey('mySecretKey');```
+```
+quixot.Logger.setURLAccessKey('mySecretKey');
+```
 
 * Create a logger instance with no appenders and use it in your webpage:
 ```
