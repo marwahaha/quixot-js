@@ -1,0 +1,38 @@
+{
+  "#__DEFINE": {
+    "QUIXOT_LIBS": "\"lib/000_propfix.js\", \"lib/001_init.js\", \"lib/002_url.js\", \"lib/003_logger.js\", \"lib/004_cookie.js\", \"lib/005_cache.js\", \"lib/006_browser.js\", \"lib/007_sancho.js\", \"lib/008_tween.js\", \"lib/009_mingui.js\", \"lib/011_media.js\", \"lib/012_rtc.js\", \"lib/014_injectors.js\",\"lib/015_ajaxsender.js\" "
+    , "NODEJS_PATH":  "\"C:\\\\\\\\Program Files\\\\\\\\nodejs\\\\\\\\node.exe\""
+    , "jsdoc2md_PATH": "\"C:\\\\\\\\Users\\\\\\\\alexandru.stefan\\\\\\\\AppData\\\\\\\\Roaming\\\\\\\\npm\\\\\\\\node_modules\\\\\\\\jsdoc-to-markdown\\\\\\\\src\\\\\\\\bin\\\\\\\\cli.js\""
+  },
+
+  "axl.stf.cabaret.HelloTask": "this build is done today",
+  "axl.stf.cabaret.FProc": {
+    "args": [
+      "{NODEJS_PATH}" ,
+      "{jsdoc2md_PATH}",
+      "{QUIXOT_LIBS}"
+    ],
+    "outFile": "autodoc.md"
+  },
+  "axl.stf.cabaret.Kane": [
+    {
+      "@extend": ["package.json"],
+      "outputFiles": [
+        {
+          "path": "../../../../../../../../../workdir/sources/js/quixot-{version}-min.js",
+          "writers": [ "axl.stf.cabaret.validate.GCWriter" ]
+        },
+        "dist/quixot.js",
+        {
+          "path": "dist/quixot-{version}-min.js",
+          "writers": [ "axl.stf.cabaret.validate.GCWriter" ]
+        }
+      ],
+
+      "inputFiles": [ "{QUIXOT_LIBS}" ]
+    }
+  ],
+  "axl.stf.cabaret.JsRun": {
+      "file": "dist/quixot.js"
+  }
+}

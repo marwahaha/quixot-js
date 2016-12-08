@@ -1,25 +1,77 @@
 /**
- * TODO add this to logger
+ * fixers for any js engine
  */
+
+var quixot_context = (typeof  window != 'undefined' ? window : (typeof GLOBAL != 'undefined' ? GLOBAL : this) );
+
+
 if(typeof console === 'undefined') {
     console = {};
     if (typeof console.log === 'undefined') {
-        console.log = function () {}
-    }
-}
-
-if(typeof JSON === 'undefined'){
-    JSON = {};
-
-    if(typeof JSON.stringify === 'undefined'){
-        JSON.stringify = function () {
-
+        if(typeof java_lang_System_out !== 'undefined') {
+            console.log = function (a){
+                java_lang_System_out.println(''+a)
+            }
+        } else {
+             console.log = function () {}
         }
     }
 }
 
 
+if (typeof Array.isArray === 'undefined') {
+    Array.isArray = function(arg) {
+        return Object.prototype.toString.call(arg) === '[object Array]';
+    };
+}
 
+
+if(typeof setTimeout === 'undefined'){
+    setTimeout = function () {
+        console.log('setTimeout is not a function')
+    }
+}
+
+if(typeof JSON === 'undefined'){
+    JSON = {
+        parse: function(sJSON) { return eval('(' + sJSON + ')'); },
+        stringify: (function () {
+            var toString = Object.prototype.toString;
+            var isArray = Array.isArray || function (a) { return toString.call(a) === '[object Array]'; };
+            var escMap = {'"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t'};
+            var escFunc = function (m) { return escMap[m] || '\\u' + (m.charCodeAt(0) + 0x10000).toString(16).substr(1); };
+            var escRE = /[\\"\u0000-\u001F\u2028\u2029]/g;
+            return function stringify(value) {
+                if (value == null) {
+                    return 'null';
+                } else if (typeof value === 'number') {
+                    return isFinite(value) ? value.toString() : 'null';
+                } else if (typeof value === 'boolean') {
+                    return value.toString();
+                } else if (typeof value === 'object') {
+                    if (typeof value.toJSON === 'function') {
+                        return stringify(value.toJSON());
+                    } else if (isArray(value)) {
+                        var res = '[';
+                        for (var i = 0; i < value.length; i++)
+                            res += (i ? ', ' : '') + stringify(value[i]);
+                        return res + ']';
+                    } else if (toString.call(value) === '[object Object]') {
+                        var tmp = [];
+                        for (var k in value) {
+                            if (value.hasOwnProperty(k))
+                                tmp.push(stringify(k) + ': ' + stringify(value[k]));
+                        }
+                        return '{' + tmp.join(', ') + '}';
+                    }
+                }
+                return '"' + value.toString().replace(escRE, escFunc) + '"';
+            };
+        })()
+    };
+}/**
+ * @namespace quixot
+ */
 var quixot = (function(context){
 
     var strType = (typeof 'string') + '',
@@ -32,10 +84,7 @@ var quixot = (function(context){
 
 
 
-    /**
-     * initial fingerprint data
-     * @type {{_nsp: number[], _errs: number[], pi, ln2, ln10, log2e, log10e, sqrt1_2, sqrt, fun}}
-     */
+
     var fingerPrintData = {
         _nsp: [0],
         _errs: [0],
@@ -140,11 +189,8 @@ var quixot = (function(context){
     };
 
 
-
-
-
     /**
-     * TODO perform a better search here
+     *
      */
     fingerPrintData._timeZoneAbbr = (function(){
         var d = new Date() + '', parts = d.split('(');
@@ -321,9 +367,7 @@ var quixot = (function(context){
         return serialize(obj, stackno, 0, 'true', 'false', '"[funct]"', '"', ',', ':', '[', ']', '{', '}', '[stack]');
     }
 
-    JSON.stringify = function (object) {
-        return stringify(object, 3);
-    }
+
 
     /**
      * TODO for nodejs
@@ -358,6 +402,7 @@ var quixot = (function(context){
     }
 
 
+
     function getFingerPrintData() {
         return fingerPrintData;
     }
@@ -369,7 +414,6 @@ var quixot = (function(context){
 
 
 
-    //TODO improve this
     function numberToString(numval, strlist, zval) {
 
 
@@ -596,17 +640,321 @@ var quixot = (function(context){
 
 
 
+   var registeredEvents = {}, eventDispatchers = {};
+    
+    function dispatch(eventName) {
+        if (!eventDispatchers[eventName]) {
+            eventDispatchers[eventName] = 1;
+        } else {
+            eventDispatchers[eventName] = eventDispatchers[eventName] + 1;
+        }
+
+
+
+        var gargs = arguments;
+        var rargs = [];
+        for (var a = 1; a < gargs.length; a++) {
+            rargs.push(gargs[a]);
+        }
+        if (registeredEvents[eventName]) {
+            for (var i = 0; i < registeredEvents[eventName].length; i++) {
+                try {
+                    registeredEvents[eventName][i].method.apply(null, rargs);
+                } catch (ex) {
+                    console.log('unable to dispatch ', eventName, ' with args ', rargs, ex);
+                }
+            }
+        }
+
+    }
+
+
+    function hasEventListener(eventName, uidName) {
+        if (!registeredEvents[eventName]) {
+            return false;
+        }
+
+        if (uidName) {
+            uidName = uidName + '';
+            for (var i = 0; i < registeredEvents[eventName].length; i++) {
+                if (registeredEvents[eventName][i].uid === uidName) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    function addEventListener(eventName, callback, uidName) {
+        if (!uidName) {
+            uidName = callback + '';
+        }
+
+        if (!registeredEvents[eventName]) {
+            registeredEvents[eventName] = [];
+        }
+        registeredEvents[eventName].push({
+            method: callback,
+            uid: uidName
+        });
+        return registeredEvents;
+    }
+
+
+    function removeEventListener(eventName, uidName) {
+        if (registeredEvents[eventName]) {
+            return false;
+        }
+
+        if (uidName) {
+            if (typeof uidName === 'function') {
+                uidName = uidName + '';
+            }
+            for (var i = 0; i < registeredEvents[eventName].length; i++) {
+                if (registeredEvents[eventName][i].uid === uidName) {
+                    registeredEvents[eventName].splice(i, 1);
+                }
+            }
+        } else {
+            registeredEvents[eventName] = [];
+        }
+
+    }
+
+
+
+    var requirememo = {};
+
+    function __isnodejs() {
+        return (typeof module !== 'undefined' && module.exports);
+    }
+
+    function __log(messaage) {
+        if(quixot && quixot.Logger){
+            quixot.Logger.getInstance('quixot_init').info(messaage);
+        }
+    }
+
+    function __require(modulename) {
+        if (__isnodejs()) {
+            if (requirememo[modulename]) {
+                return requirememo[modulename];
+            }
+            __log(modulename);
+            requirememo[modulename] = require(modulename);
+            return requirememo[modulename];
+        }
+
+
+        if(modulename === 'fs'){
+            return {
+                existsSync: function () {
+                    return false;
+                },
+                mkdirSync: function () {
+                    return false;
+                },
+                writeFileSync: function () {
+
+                }
+            }
+        }
+        console.log('[usage in this context not implemented for requirement ' + modulename + ']');
+        return {}
+    }
+
+
 
 
     return {
+        /**
+         * @namespace Fingerprint
+         * @memberof quixot
+         */
         Fingerprint: {
+            /**
+             *
+             * @method data
+             * @memberof quixot.Fingerprint
+             * @returns {Object} the full scanned properties
+             */
             data: getFingerPrintData,
+            /**
+             *  @method identifier
+             *  @memberof quixot.Fingerprint
+             *  @returns {String} The unique fingerprint identifier
+             */
             identifier: getFingerprintIdentifier,
+
+            /**
+             * @memberof quixot.Fingerprint
+             * @method text
+             * @returns {String} the text to compose the identifier
+             */
             text: getFingerPrintText,
+            /**
+             * @method numbers
+             * @memberof quixot.Fingerprint
+             * @returns {String} the numbers from text()
+             */
             numbers: getFingerprintNumbers
         },
+
+        /**
+         * @namespace Event
+         * @memberof quixot
+         */
+        Event: {
+            /**
+             *  @property {String}
+             *  @memberof quixot.Event
+             */
+            APPOINTMENT_DONE: 'quixot_event_appointment_done',
+            /**
+             * @method dispatch
+             * @memberof quixot.Event
+             */
+            dispatch: dispatch,
+            /**
+             * check if a provided listener exist
+             * @memberof quixot.Event
+             * @param eventName required
+             * @param uidName optional, if provided when listener was added
+             * @returns {Boolean} true if the listener exist
+             */
+            hasListener: hasEventListener,
+
+            /**
+             * register an event listener
+             * @memberof quixot.Event
+             * @param eventName {String} required
+             * @param callback {Function} required
+             * @param uidName {String} an optional unique identifier for the method,
+             * to be used when removing the event handler
+             * @example
+             * quixot.addEventListener('whenMyJobIsCompleted', function(){
+             *      console.log('finished');
+             * }, 'myUniqeId');
+             * @returns {Object} The current registered event listeners
+             */
+             addListener: addEventListener,
+
+            /**
+             * remove a registered event listener
+             * @memberof quixot.Event
+             * @param eventName {String} name of the event to be removed
+             * @param uidName {String} optional. If not provided default function to string will be used
+             * @returns {boolean}
+             */
+            removeListener: removeEventListener,
+            /**
+             * retrieve all registered events and dispacthers
+             * @memberof quixot.Event
+             * @returns {Object}
+             */
+            getAll: function () {
+                return {
+                    events: registeredEvents,
+                    dispatchers: eventDispatchers
+                };
+            },
+
+            /**
+             * appoint a method. It uses animationFrame or setTimeout, or direct call if none of the
+             * above exists
+             * @memberof quixot.Event
+             * @param callback {Function} required
+             * @param delay  {Number} optional, used only for setTimeout
+             * @returns {Object}
+             */
+            appoint: function (callback, delay) {
+                var type = 'unknown', thisLoop =  new Date().getTime(), fps, timeoutId;
+                if(!delay){
+                    delay = 30;
+                }
+                if(context.requestAnimationFrame){
+                    type = 'requestAnimationFrame';
+                    timeoutId = context.requestAnimationFrame(callback);
+                }
+                else if(context.mozRequestAnimationFrame){
+                    type = 'mozRequestAnimationFrame';
+                    timeoutId = context.mozRequestAnimationFrame(callback);
+                }
+                else if(context.msRequestAnimationFrame){
+                    type = 'msRequestAnimationFrame';
+                    timeoutId = context.msRequestAnimationFrame(callback);
+                }
+                else if(context.webkitRequestAnimationFrame){
+                    type = 'webkitRequestAnimationFrame';
+                    timeoutId = context.webkitRequestAnimationFrame(callback);
+                }
+                else if(context.oRequestAnimationFrame){
+                    type = 'oRequestAnimationFrame';
+                    timeoutId = context.oRequestAnimationFrame(callback);
+                }
+                else if(typeof setTimeout != 'undefined'){
+                    timeoutId = setTimeout(callback, 30);
+                    type = 'setTimeout';
+                } else {
+                    type = 'nothing found';
+                    callback();
+                }
+
+               quixot.Event.dispatch(quixot.Event.APPOINTMENT_DONE);
+
+                return {
+                    type: type,
+                    id: timeoutId
+                };
+            },
+
+
+            /**
+             * @memberof quixot.Event
+             * @param id
+             */
+            dropAppoint: function (id) {
+                if (context.cancelAnimationFrame) {
+                    context.cancelAnimationFrame(id);
+                } else {
+                    clearTimeout(id);
+                }
+            }
+        },
+
+
+
+        /**
+         * @namespace Util
+         * @memberof quixot
+         */
         Util: {
+            /**
+             * encode any type of javascript data type (specially numbers) to string
+             * @method atos
+             * @memberof quixot.Util
+             * @param data {Number|String|Date|Object|Array|Function} required
+             * @param mapping {String} optional a string whose characters will be used for encoding
+             * @param zval {Number} the value for 0, used for encoding duplicated numeric characters
+             * @returns {String}
+             * @example
+             *  quixot.atos(123456789); // "mdefghij"
+             *  quixot.atos(000000); // "a"
+             *  quixot.atos('000000'); // "abcdef"
+             *  quixot.atos('000000', '!@#$%^&*()+='); // "!@#$%^"
+             */
             atos: numberToString,
+            stringToHex: function(integer) {
+                var str = parseInt(integer).toString(16);
+                return str.length === 1 ? '0' + str : str;
+            },
+            rgbToHex: function(r, g, b) {
+                return '#' + ColorUtils.stringToHex(r) + ColorUtils.stringToHex(g) + ColorUtils.stringToHex(b);
+            },
+            rgbToHexShift: function(r, g, b) {
+                return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            },
             serialize: serialize,
             simplify: simplify,
             isPrimitive: isPrimitive,
@@ -614,8 +962,92 @@ var quixot = (function(context){
             objKeys: objKeys,
             isArray: isArray,
             encodeObject: encodeObject,
-            stringify: stringify
+            stringify: stringify,
+            /**
+             * increments an unique number (old value is cached)
+             * @memberof quixot.Util
+             * @param asfloat {Boolean} optional
+             * @example
+             *  quixot.Util.incr(true); // 30.07000000000001
+             *  quixot.Util.incr();    // 31
+             */
+            incr: function (asfloat) {
+
+            },
+            /**
+             * if no parameters are provided a quixot.Util.incr() value will be returned
+             * @memberof quixot.Util
+             * @param min
+             * @param max
+             * @returns {Number}
+             */
+            randNr: function (min, max) {
+
+            }
         },
+        /**
+         * returns data related to current context
+         * @memberof quixot
+         */
+        context: function () {
+            return quixot_context;
+        },
+        /**
+         * contains data related to enviroment:
+         * @namespace Env
+         * @memberof quixot
+         * @example
+         * quixot.Env.jsEngine.isBrowser; //true if script is running in browser
+         * quixot.Env.jsEngine.isNodeJs;  //true if script is running in node js
+         * quixot.Env.javaEnabled;        //true if java is enabled in browser,
+         *                                             // or if a path to JAVA_HOME exist is operating system enviroment
+         * quixot.Env.tempDir             //path to operating system temporary directory
+         * quixot.Env.homeDir             //path to operating system user home directory
+         * quixot.Env.javaPath            //path to java binary (java.exe || java)
+         */
+        Env: (function () {
+                var isBrowser = (typeof  window != 'undefined'),
+
+                    data = {
+                        jsEngine: {
+                            isNodeJs: __isnodejs(),
+                            isBrowser: isBrowser
+                        },
+                        javaEnabled: false,
+                        tempDir: '',
+                        homeDir: '',
+                        javaPath: false
+                    };
+
+            if(typeof process != 'undefined' && process.env){
+                for(var i in process.env){
+                    data[i] = process.env[i];
+                    fingerPrintData['process_env' + i] = process.env[i];
+                }
+                var p = __require('path');
+                data.homeDir = (process.env.HOME || process.env.USERPROFILE);
+                data.tempDir = (process.env.TEMP || process.env.TMP || process.env.APPDATA);
+
+                if(process.env.JRE_HOME){
+                    data.javaEnabled = true;
+                    data.javaPath = process.env.JRE_HOME + p.sep + 'bin' + p.sep + 'java';
+                }
+                else if(process.env.JAVA_HOME){
+                    data.javaEnabled = true;
+                    data.javaPath = process.env.JAVA_HOME + p.sep + 'bin' + p.sep + 'java';
+                }
+
+
+            }
+            return data;
+        })(),
+
+        /**
+         * require safe support: cached node js requirements <br />
+         * TODO support for http://requirejs.org/
+         * @memberof quixot
+         */
+        require: __require,
         _performance: getPerformance,
         _getmemodata: function () {
             return memodata;
@@ -625,18 +1057,11 @@ var quixot = (function(context){
         }
     }
 
-})(
-    (function () {
-        if(typeof window != 'undefined') {
-            return window;
-        }
+})(quixot_context);
 
-        if(typeof GLOBAL != 'undefined') {
-            return GLOBAL;
-        }
-        return {};
-    })()
-);
+
+
+
 
 
 if(typeof module !='undefined') {
@@ -645,15 +1070,11 @@ if(typeof module !='undefined') {
 
 
 
-
-
-
-
 /**
- * Created by alexstf on 1/8/16 for cam4.
- * Used to decode url format into object
+ * @module URL
+ * @namespace URL
+ * @memberof quixot
  */
-
 quixot.URL = (function() {
 
 
@@ -736,8 +1157,8 @@ quixot.URL = (function() {
         };
     }
 
+
     function getParams(url) {
-        console.log(decode(url));
         return decode(url).params;
     }
 
@@ -766,10 +1187,52 @@ quixot.URL = (function() {
     }
 
     return {
+        /**
+         * retrieve the parameters from a given url
+         * @memberof quixot.URL
+         * @param url
+         * @returns {Object}
+         * @example
+         * quixot.URL.getParams("test.html?one=1&two=2")
+         * //returns Object {one: 1, two: 2}
+         * // same as:
+         * quixot.URL.decode("test.html?one=1&two=2").params
+         */
         getParams: getParams,
         getDomainFromUrl: getDomainFromUrl,
         currentDomain: currentDomain,
+        /**
+         * converts an object to a url query model
+         * @memberof quixot.URL
+         * @param object
+         * @returns {String}
+         */
+        querify: function (object) {
+            var cont = [];
+            var text = '';
+            if (object != null){
+                for (var i in object) {
+                    if(i && object[i]){
+                        cont.push({
+                            pp: i,
+                            vl: object[i]
+                        });
+                    }
+                }
+                for(var j = 0; j < cont.length; j++) {
+                    text += cont[j].pp + '=' + cont[j].vl;
+                    if(j < cont.length -1) {
+                        text+='&';
+                    }
+                }
+                return text;
+            }
+        },
         decode: decode,
+        /**
+         * @memberof quixot.URL
+         * @returns {String} current path name, as defined by window.location.pathname
+         */
         currentPath: function () {
             if(typeof  window != 'undefined' && window.location && window.location.pathname){
                 return window.location.pathname
@@ -791,7 +1254,26 @@ quixot.URL = (function() {
             };
         }
     };
-})();quixot.Logger = (function () {
+})();/**
+ * @module Logger
+ * @namespace Logger
+ * @memberof Logger
+ * @example
+ *   var myLogger = quixot.Logger.getInstance('TestLogger');
+ *   myLogger.log('info', 'some message');
+ *   myLogger.error('error occured');     //produces the same as
+ *   myLogger.log('error', 'error occured');
+ *   myLogger.info('info data');          //produces the same as
+ *   myLogger.log('info', 'info data');
+ *   quixot.Logger.warn('warning');        //produces the same as
+ *   quixot.Logger.getInstance('quixot').log('warn', '111111');
+ *   quixot.Logger.trace('bla-bla-bla');   ///produces the same as
+ *   quixot.Logger.getInstance('quixot').log('warn', '111111');
+ */
+
+
+
+quixot.Logger = (function () {
 
 
     var defaultConfiguration = {
@@ -804,7 +1286,12 @@ quixot.URL = (function() {
                  console.warn(name + '.'+level + ' '+ data.message, data);
              }
              else {
-                 console.log(name + '.'+level + ' '+ data.message, data);
+                 if(quixot.Env.jsEngine.isBrowser){
+                     console.log(name + '.'+level + ' '+ data.message, data);
+                 } else {
+                     console.log(' [ ' + name + '.'+level + ' '+ data.message + ' ]');
+                 }
+
              }
 
 
@@ -838,12 +1325,6 @@ quixot.URL = (function() {
     var logoptskey = 'logopts';
     
 
-    /**
-     * logi=instanceName||ALL
-     * level=level||ALL
-     * pattern='%s, %m, %d'
-     * appender
-     */
     function getConfigFromUrl() {
         if(logoptskey){
             return quixot.URL.currentData().params[logoptskey];
@@ -970,32 +1451,73 @@ quixot.URL = (function() {
 
 
     return {
+        /**
+         * @memberof quixot.Logger
+         * @param message
+         */
         info: function (message) {
             defaultInstance.log('info', message);
         },
+        /**
+         * @memberof quixot.Logger
+         * @param object
+         */
         setDefaultConfig: function(object) {
             for(var i in object) {
                 defaultConfiguration[i] = object[i];
             }
         },
+        /**
+         * @memberof quixot.Logger
+         * @returns {Object} defaultConfiguration
+         */
         getDefaultConfig: function () {
             return defaultConfiguration;
         },
+        /**
+         * @memberof quixot.Logger
+         * @param message
+         */
         trace: function (message) {
             defaultInstance.trace(message);
         },
+        /**
+         * @memberof quixot.Logger
+         * @param message
+         */
         error: function(message){
             defaultInstance.log('error', message);
         },
+        /**
+         * @memberof quixot.Logger
+         * @param message {String}
+         */
         warn: function (message) {
             defaultInstance.warn(message);
         },
+        /**
+         * @memberof quixot.Logger
+         * @returns {Object} default instance logs
+         */
         getLogs: function () {
             return defaultInstance.getLogs();
         },
+        /**
+         * @memberof quixot.Logger
+         * @returns {Object} the container with all logging instances
+         */
         getAll: function(){
           return container;
         },
+        /**
+         * returns a new logger instance
+         * @memberof quixot.Logger
+         * @param instancename {String} required
+         * @param config {Object} logger configuration
+         * @returns {Object} the container with all the logger instances
+         * @example
+         * var myLogger = quixot.Logger.getInstance('TestLogger');
+         */
         getInstance: function(instancename, config) {
             var instanceConfig = defaultConfiguration;
             if(config){
@@ -1008,14 +1530,29 @@ quixot.URL = (function() {
             }
             return container[instancename];
         },
+        /**
+         * set the value for accessing logger configuration from URL.
+         * If is set to ``` false```, no configuartion can
+         * be changed by using URL parameters
+         * @memberof quixot.Logger
+         * @param name {String} required
+         * @example
+         * //this will allow you to put the following query param into url:
+         * //http://localhost/mypage?customKey={"ALL":{"consoleAppender":true}}
+         * quixot.Logger.setURLAccessKey('customKey');
+         */
         setURLAccessKey: function (p) {
             logoptskey = p;
         }
     }
 
 })();
+/**
+ * @module Cookie
+ * @namespace Cookie
+ * @memberof quixot
+ */
 quixot.Cookie = (function(){
-
 
     function getCookie(name) {
         if(typeof document == 'undefined'){
@@ -1051,6 +1588,7 @@ quixot.Cookie = (function(){
         setCookie(name, value, p_expires, p_path, p_domain, p_secure);
     }
 
+
     function setCookie(name, value, p_expires, p_path, p_domain, p_secure) {
 
         if(typeof document == 'undefined'){
@@ -1084,19 +1622,117 @@ quixot.Cookie = (function(){
         return cookieStr;
 
     }
-    
+
+
     function deleteCookie(name, p_path, p_domain) {
         setCookie(name, '', new Date('Thu, 01 Jan 1970 00:00:01 GMT'), p_path, p_domain);
     }
 
 
     return {
+        /**
+         * @memberof quixot.Cookie
+         * @param name
+         * @returns {String}
+         */
         get: getCookie,
+
+        /**
+         * create a new cookie
+         * @memberof quixot.Cookie
+         * @param name
+         * @param value
+         * @param p_expires
+         * @param p_path
+         * @param p_domain
+         * @param p_secure
+         * @returns {string}
+         */
         set: setCookie,
+
+        /**
+         * delete cookie
+         * @memberof quixot.Cookie
+         * @param name
+         * @param p_path
+         * @param p_domain
+         */
         drop: deleteCookie
     }
-})();//require urldecoder
+})();
+
+/**
+ * supports browser && nodejs
+ * @module Cache
+ * @namespace Cache
+ * @memberof quixot
+ */
 quixot.Cache = (function () {
+
+
+    function getCacheNamed(name) {
+        var data = getNodeJsCache();
+        if(data[name]){
+            return data[name];
+        }
+        return {};
+    }
+
+
+    function getCachePath() {
+        var fs = quixot.require('fs');
+        var p = quixot.require('path');
+        var path = quixot.Env.homeDir + p.sep + ".cache";
+        if (!fs.existsSync(path)) {
+            fs.mkdirSync(path);
+        }
+        path += p.sep + "quixot.cache.json";
+
+        return path;
+    }
+
+    function saveNodeJsCache(newdata) {
+        var path = getCachePath(), fs = quixot.require('fs');
+        var line = fs.readFileSync(path, "utf8");
+        var oldData = JSON.parse(line);
+        if(newdata){
+            var props = 0;
+            for(var i in newdata){
+                oldData[i] = newdata[i];
+                props++;
+            }
+
+            if(props > 0){
+
+                console.log('saving' + JSON.stringify(oldData));
+                fs.writeFileSync(path, JSON.stringify(oldData));
+            }
+        }
+    }
+
+    function removeNodeJsCache(keyname, slot) {
+        var path = getCachePath(), fs = quixot.require('fs');
+        var line = fs.readFileSync(path, "utf8");
+        var oldData = JSON.parse(line);
+        var obj = oldData[keyname];
+        delete obj[slot];
+        fs.writeFileSync(path, JSON.stringify(oldData));
+    }
+
+    function getNodeJsCache() {
+        var path = getCachePath(), fs = quixot.require('fs');
+        if (!fs.existsSync(path)) {
+            var initData = {
+                creationDate: new Date(),
+                writer: 'quixot'
+            };
+            fs.writeFileSync(path, JSON.stringify(initData));
+            return initData;
+        }
+        var line = fs.readFileSync(path, "utf8");
+        var oldData = JSON.parse(line);
+        return oldData;
+    }
 
 
     function CacheInstance(paramname) {
@@ -1107,30 +1743,27 @@ quixot.Cache = (function () {
             .replace(/\./g, '₤')
         ;
 
-
+        var env = quixot.Env, isBrowser = env.jsEngine.isBrowser;
 
         var data = (function () {
             var r;
-
-            if(typeof localStorage != 'undefined') {
-                r = localStorage.getItem(name);
-                // console.log('load' + r + ' for ' + name);
-            }
-
-            if(!r) {
-                r = quixot.Cookie.get(name);
-            }
-
-            try {
-                r = JSON.parse(r);
-            }catch (e) {
-                if(typeof document != 'undefined'){
-                    throw new Error('failed loading cache from ' + r);
+            if(isBrowser) {
+                if(typeof localStorage != 'undefined') {
+                    r = localStorage.getItem(name);
+                }
+                if(!r) {
+                    r = quixot.Cookie.get(name);
                 }
 
-                r = {};
+                try {
+                    r = JSON.parse(r);
+                }catch (e) {
+                    throw new Error('failed loading cache from ' + r);
+                    r = {};
+                }
+            } else {
+                r = getCacheNamed(name);
             }
-
             return r;
         })();
 
@@ -1148,23 +1781,43 @@ quixot.Cache = (function () {
         }
 
 
+        var saveTimeoutId = 0;
+
         this.remove = function (slot) {
             if(data) {
-                delete data[slot];
+               delete data[slot];
+               if(!isBrowser){
+                   console.log('removing ' +  " name = " + name);
+                   removeNodeJsCache(name, slot);
+               } else{
+                   this.save();
+               }
             }
         }
+
 
 
         this.save = function () {
             if(!data) {
                 return;
             }
-            // console.log('save cache [' + name + ' at ' + new Date());
-            if(typeof localStorage != 'undefined') {
-                localStorage.setItem(name, JSON.stringify(data));
-            }
+            if(isBrowser) {
+                clearTimeout(saveTimeoutId);
+                console.log(name + 'salvat la ' + new Date())
+                if(typeof localStorage != 'undefined') {
+                    localStorage.setItem(name, JSON.stringify(data));
+                }
+                quixot.Cookie.set(name, JSON.stringify(data));
 
-            quixot.Cookie.set(name, JSON.stringify(data));
+                saveTimeoutId = setTimeout(function () {
+                    quixot.Cache.getInstance(paramname).save();
+                }, 1000 * 10);
+                console.log("saveTimeoutId = " + saveTimeoutId);
+            } else {
+                var vdata = {};
+                vdata[name] = data;
+                saveNodeJsCache(vdata);
+            }
         }
 
 
@@ -1185,6 +1838,8 @@ quixot.Cache = (function () {
                 data[propname] = defaultvalue;
                 return defaultvalue;
             }
+
+            return null;
         }
     }
 
@@ -1206,15 +1861,7 @@ quixot.Cache = (function () {
     };
 
 
-    function saveAllInStorage() {
-        for(var i in container) {
-            container[i].save();
-        }
 
-        setTimeout(saveAllInStorage, 1000);
-    }
-
-    saveAllInStorage();
 
     return {
         getInstance: function (instancename) {
@@ -1224,107 +1871,30 @@ quixot.Cache = (function () {
             return container[instancename];
         },
 
+        /**
+         * put item in cache
+         * @memberof quixot.Cache
+         * @param key
+         * @param value
+         */
         put: function (key, value) {
             domainInstance.put(key, value)
         },
 
+        remove: function (key) {
+            domainInstance.remove(key);
+        },
+
         getData: function () {
             return  domainInstance.getData()
+        },
+
+        getSafe: function (propname, defaultvalue) {
+            return  domainInstance.getSafe(propname, defaultvalue)
         }
     }
-})();
-//
-//get the IP addresses associated with an account
-
-/**
- * http://stackoverflow.com/questions/37169701/get-current-machine-ip-in-js-no-third-party-services
- * @param callback
- */
-quixot.getIPs = function(callback){
-
-    try {
-        var ip_dups = {};
-        //compatibility for firefox and chrome
-        var RTCPeerConnection = window.RTCPeerConnection
-            || window.mozRTCPeerConnection
-            || window.webkitRTCPeerConnection;
-        var useWebKit = !!window.webkitRTCPeerConnection;
-
-        //bypass native webrtc blocking using an iframe
-        //NOTE: you need to have an iframe in the page right above the script tag
-        //<iframe id="iframe" sandbox="allow-same-origin" style="display: none"></iframe>
-
-
-        if (!RTCPeerConnection) {
-            var win = iframe.contentWindow;
-            RTCPeerConnection = win.RTCPeerConnection
-                || win.mozRTCPeerConnection
-                || win.webkitRTCPeerConnection;
-            useWebKit = !!win.webkitRTCPeerConnection;
-        }
-
-        //minimal requirements for data connection
-        var mediaConstraints = {
-            optional: [{RtpDataChannels: true}]
-        };
-        var servers = {iceServers: [{urls: "stun:stun.services.mozilla.com"}]};
-        //construct a new RTCPeerConnection
-        var pc = new RTCPeerConnection(servers, mediaConstraints);
-
-        function handleCandidate(candidate) {
-            //match just the IP address
-            var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
-            var ip_addr = ip_regex.exec(candidate)[1];
-            //remove duplicates
-            if (ip_dups[ip_addr] === undefined) {
-                callback(ip_addr);
-            }
-            ip_dups[ip_addr] = true;
-        }
-
-        //listen for candidate events
-        pc.onicecandidate = function (ice) {
-            //skip non-candidate events
-            if (ice.candidate) {
-                handleCandidate(ice.candidate.candidate);
-            }
-        };
-        //create a bogus data channel
-        pc.createDataChannel("");
-        //create an offer sdp
-        pc.createOffer(function (result) {
-            //trigger the stun server request
-            pc.setLocalDescription(result, function () {
-            }, function () {
-            });
-        }, function () {
-        });
-
-        //wait for a while to let everything done
-        setTimeout(function () {
-            //read candidate info from local description
-            var lines = pc.localDescription.sdp.split('\n');
-
-            lines.forEach(function (line) {
-                if (line.indexOf('a=candidate:') === 0) {
-                    handleCandidate(line);
-                }
-
-            });
-        }, 1000);
-    } catch (e) {
-        callback();
-    }
-}
-
-
-quixot.getIPs(function (ip) {
-});var quixot = quixot || {};
-
-
-
-
-quixot.System = {
+})();quixot.System = {
+    
     battery: (function () {
         if(typeof navigator != 'undefined') {
             return navigator.battery || navigator.webkitBattery || navigator.mozBattery || {};
@@ -1374,7 +1944,15 @@ quixot.System = {
 
     })(),
 
-    os: {}
+    os: (function () {
+        if(typeof process != 'undefined'){
+            var isWin = /^win/.test(process.platform + '');
+            if(isWin && quixot.Env.javaPath){
+                quixot.Env.javaPath += '.exe';
+            }
+        }
+        return {}
+    })()
 }
 
 
@@ -1401,10 +1979,7 @@ quixot.Browser = (function () {
 
         return getWindow().navigator || {};
     }
-    /**
-     * the order of this list is very important for backward complatibility
-     * @type {*[]}
-     */
+
     var dataBrowser = [
         {string: getNavigator().userAgent, subString: 'iCab', versionSearch: 'iCab', identity: 'iCab'},
         {string: getNavigator().userAgent, subString: 'rekonq', versionSearch: 'rekonq', identity: 'Rekonq'},
@@ -1618,9 +2193,9 @@ quixot.Browser = (function () {
 
     if(getNavigator().javaEnabled) {
         try {
-            javaEnabled = getNavigator().javaEnabled();
+            quixot.Env.javaEnabled = getNavigator().javaEnabled();
         } catch (e) {
-            javaEnabled = false;
+            quixot.Env.javaEnabled = false;
         }
     }
 
@@ -1739,7 +2314,12 @@ quixot.Browser = (function () {
 
 
 
-quixot.Test = (function (q) {
+/**
+ * the unit testing namespace
+ * @namespace Sancho
+ * @memberof quixot
+ */
+quixot.Sancho = (function (q) {
     var config = {
         debug: true,
         maxListSize: 20,
@@ -1955,6 +2535,8 @@ quixot.Test = (function (q) {
         uniqueVal = new Date().getTime();
     }
 
+
+    
     function incr(asfloat) {
         if (asfloat) {
             uniqueVal+=0.01;
@@ -1970,10 +2552,9 @@ quixot.Test = (function (q) {
        return Math.round(randNr(min, max))
     }
 
-    /**
-     * always return a new number
-     * @returns {*}
-     */
+
+
+    
     function randNr(min, max) {
         if(min){
             if(!+min) {
@@ -1993,12 +2574,15 @@ quixot.Test = (function (q) {
     }
 
 
+
+
+
     q.Util.randNr = randNr,
     q.Util.randInt = randInt,
     q.Util.randList = randList,
     q.Util.randListStr = randListString,
-    q.Util.randListObj = randListObj,
-    q.Util.incr = incr,
+    q.Util.randListObj = randListObj;
+    q.Util.incr = incr;
     q.Util.randStr = randomString,
     q.Util.randAny = randAny,
     q.Util.randObj = randObj;
@@ -2007,7 +2591,7 @@ quixot.Test = (function (q) {
 
     return {
         equals: equals,
-        monkey: monkey,
+        donkey: monkey,
         config: config,
         _memo: function () {
             return {
@@ -2020,7 +2604,116 @@ quixot.Test = (function (q) {
     /**
      quixot.test.monkey('console.log({string}, {number}, {integer}, {integerList}, {numberList}, {stringList}, {objectList}, {object})')
      */
-})(quixot);quixot._fullscreenmethods = (function () {
+})(quixot);quixot.Tween = function(start, end, steps, object) {
+    var self = this;
+    var speed = 100;
+    var values = Easing(start, end, steps);
+    var count = 0;
+
+    this.onUpdate = function(value, object) {
+    };
+
+    this.onComplete = function(object) {
+    };
+
+    this.start = function() {
+        doAnimate();
+    };
+
+    var updateEvent = new UpdateEvent(speed);
+
+    function doAnimate() {
+        if (values[count]) {
+            count++;
+            if (self.onUpdate) {
+                self.onUpdate(values[count], object);
+            }
+            updateEvent.start(doAnimate);
+        } else {
+            if (self.onComplete) {
+                self.onComplete(object);
+                updateEvent.stop();
+            }
+        }
+    }
+};
+
+
+
+quixot.TweenMulti = function(startObjectProps, endObjectProps, steps, object) {
+    var self = this;
+    var speed = 100;
+    if (BrowserDetect.browser === 'Explorer') {
+        steps = Math.round(steps / 2);
+    }
+
+    var valuesContainer = [];
+    var result = {};
+    for (var i in startObjectProps) {
+        var value = Easing(startObjectProps[i], endObjectProps[i], steps);
+        result[i] = startObjectProps[i];
+        valuesContainer.push(value);
+    }
+
+    var count = 0;
+    this.onUpdate = function(object) {
+    };
+    this.onComplete = function(object) {
+    };
+    this.start = function() {
+        doAnimate();
+    };
+    var updateEvent = new UpdateEvent(speed);
+    var allowUpdate = false;
+    function doAnimate() {
+        var num = -1;
+        count++;
+        for (var i in result) {
+            num++;
+            if (valuesContainer[num][count]) {
+                result[i] = valuesContainer[num][count];
+                allowUpdate = true;
+            } else {
+                allowUpdate = false;
+            }
+
+        }
+
+        if (allowUpdate) {
+            if (self.onUpdate) {
+                self.onUpdate(result);
+            }
+            updateEvent.start(doAnimate);
+        } else {
+            if (self.onComplete) {
+                self.onComplete(result);
+            }
+        }
+    }
+};
+
+
+
+
+
+quixot.Easing = function(firstNumber, secondNumber, steps) {
+    if (firstNumber === 0) {
+        firstNumber = .001;
+    }
+
+    var arai = new Array();
+    var fixunit = secondNumber - firstNumber;
+    var unit = fixunit / steps;
+    for (var i = 0; i < steps + 1; i++) {
+        arai.push(firstNumber.toFixed(4));
+        firstNumber += unit;
+    }
+
+    return arai;
+};
+
+
+quixot._fullscreenmethods = (function () {
     var REQUEST_FULLSCREEN_FUNCS = {
         'requestFullscreen': {
             'change': 'onfullscreenchange',
@@ -2111,3 +2804,1123 @@ quixot.Test = (function (q) {
 
 })();
 
+var HTML5Notification = (function() {
+
+
+    var defaultDesktopNotification = {
+        lifeTime: 5000,
+        title: 'notification!',
+        text: 'Here is the notification text',
+        picture: 'logo.png',
+        onclick: function() {
+        },
+        onclose: function() {
+        }
+    };
+
+
+    var _currentNotification = {};
+    var _timeoutId = false;
+
+
+    function setDesktopNotification(unique, settings) {
+        if (!settings) {
+            settings = defaultDesktopNotification;
+        } else {
+            for (var i in defaultDesktopNotification) {
+                if (!settings[i]) {
+                    settings[i] = defaultDesktopNotification[i];
+                }
+            }
+        }
+
+        var currentNotification;
+
+        function closeNotification() {
+            if (currentNotification) {
+                try {
+                    currentNotification.cancel();
+                } catch (ex) {
+                }
+
+                try {
+                    currentNotification.close();
+                } catch (ex) {
+                }
+            }
+        }
+
+
+
+
+        function makeChromeNotification() {
+            currentNotification = window.webkitNotifications.createNotification(
+                settings.picture,
+                settings.title,
+                settings.text
+            );
+            currentNotification.onclick = settings.onclick;
+            currentNotification.onclose = settings.onclose;
+
+            currentNotification.show();
+            if (unique) {
+                _currentNotification = currentNotification;
+            }
+        }
+
+
+        function makeFirefoxNotification() {
+            currentNotification = new Notification(settings.title, {body: settings.text, icon: settings.picture});
+            currentNotification.onclick = settings.onclick;
+            currentNotification.onclose = settings.onclose;
+            if (unique) {
+                _currentNotification = currentNotification;
+            }
+        }
+
+        if (_timeoutId) {
+            clearTimeout(_timeoutId);
+        }
+        if (unique) {
+            _timeoutId = setTimeout(closeNotification, settings.lifeTime);
+        } else {
+            setTimeout(closeNotification, settings.lifeTime);
+        }
+
+
+        //code for chrome:
+        if (window.webkitNotifications && BrowserDetect.browser != 'Safari') {
+            if (unique) {
+                closeNotification();
+            }
+
+            var havePermission = window.webkitNotifications.checkPermission();
+            if (havePermission == 0) {
+                makeChromeNotification();
+                return 'success';
+            } else if (havePermission == 1) {
+                window.webkitNotifications.requestPermission();
+                return 'pending-approval';
+            } else {
+                window.webkitNotifications.requestPermission();
+                return 'failed';
+            }
+        }
+        //code for firefox
+        else if (("Notification" in window)) {
+            if (unique) {
+                closeNotification();
+            }
+            if (Notification.permission === "granted") {
+                makeFirefoxNotification();
+                return 'success';
+            }
+            else if (Notification.permission !== 'denied') {
+                Notification.requestPermission(function(permission) {
+                    if (!('permission' in Notification)) {
+                        Notification.permission = permission;
+                    }
+                    if (permission === "granted") {
+                        makeFirefoxNotification();
+                    }
+                });
+                return 'pending-approval';
+            }
+            return 'failed';
+        }
+        return 'failed';
+    }
+
+
+
+    return {
+        setDesktopNotification: setDesktopNotification
+    };
+
+})();
+
+
+
+
+
+
+
+
+var HTML4Notification = (function() {
+
+    var defaultDesktopNotification = {
+        lifeTime: 5000,
+        title: 'Cam4 Chrome notification!',
+        text: 'Here is the notification text',
+        picture: 'http://edgecast.cam4s.com/web/images/logo.png',
+        onclick: function() {
+        },
+        onclose: function() {
+        }
+    };
+
+    var currentNotifications = {};
+
+
+
+    var notifySettings = {
+        updateId: '',
+        parent: {},
+        rules: {
+            'newshow': {
+                lifeTime: 30000,
+                onInit: function(item, list, callback) {
+                    item.style.position = 'absolute';
+                    item.style.right = '4px';
+                    item.style.top = '1400px';
+                    item.style.opacity = '0';
+                    //http://stackoverflow.com/questions/18578244/displaying-elements-other-than-fullscreen-element-html5-fullscreen-api
+                    item.style['z-index'] = 2147483648;
+                    callback();
+                },
+                onUpdate: function(item, index, list, callback) {
+                    console.log('on update ' + index);
+                    var itemHeight = (item.offsetHeight + 10 || item.clientHeight + 10 || 100);
+                    var tween;
+                    var bottomTo = Utils.getPageArgs().window.height - (itemHeight * (index + 1.5) + 10);
+
+                    if (item.style.opacity < .5) {
+                        tween = new TweenMulti({opacity: 0, top: 0}, {opacity: 1, top: bottomTo}, 20, item);
+                        tween.onUpdate = function(object) {
+                            item.style.opacity = object.opacity;
+                            item.style.top = object.top + 'px';
+                        };
+                    }
+                    else {
+                        var topFrom = Math.floor((item.style.top).replace('px', ''));
+                        tween = new TweenMulti({top: topFrom}, {top: bottomTo}, 24, item);
+                        tween.onUpdate = function(object) {
+                            item.style.top = object.top + 'px';
+                        };
+                    }
+
+                    tween.onComplete = function() {
+                        callback();
+                    };
+                    tween.start();
+                },
+                onRemove: function(div, callback) {
+                    var tween = new TweenMulti({opacity: 1}, {opacity: 0}, 20, div);
+                    tween.onUpdate = function(object) {
+                        if (div) {
+                            div.style.opacity = object.opacity;
+                        }
+                    }
+
+
+                    tween.onComplete = function() {
+                        try {
+                            document.body.removeChild(div);
+                        } catch (ex) {
+
+                        }
+                        callback();
+                    };
+
+                    tween.start();
+                }
+            },
+            'notification': {
+                lifeTime: 5000,
+                onInit: function(item, list, callback) {
+                    var index = list.length - 1;
+                    var lastItem = false;
+                    if (list[list.length - 2]) {
+                        lastItem = list[list.length - 2];
+                    }
+
+                    item.style.position = 'fixed';
+                    item.style.opacity = '0';
+                    item.style['z-index'] = '999999';
+
+
+                    document.body.appendChild(item);
+                    var itemHeight = $j(item).height() + 10;
+
+                    if (!this._lastRight) {
+                        this._lastRight = 1;
+                    }
+                    if (lastItem) {
+
+                        var lastBottom = parseInt($j('#' + lastItem)[0].style.bottom);
+                        item.style.bottom = lastBottom + itemHeight + 'px';
+                        item.style.right = this._lastRight + 'px';
+                    } else {
+                        item.style.bottom = '0px';
+                        item.style.right = '0px';
+                    }
+
+
+
+                    function updateNotifications() {
+                        var windowHeight = $j(window).height();
+                        var mainList = HTML4Notification.getNotificationList();
+                        var thisList = mainList['notification'];
+                        var occupiedHeight = 0;
+                        var offsetY = 0;
+                        var offsetX = 0;
+
+
+                        function animateFix(i) {
+                            if (document.getElementById(thisList[i])) {
+                                var citem = document.getElementById(thisList[i]);
+                                var itemHeight = $j(citem).height() + 10;
+                                var itemWidth = $j(citem).width() + 10;
+                                var marginBottom = (offsetX * itemHeight);
+                                occupiedHeight += itemHeight;
+
+                                var fromX = parseInt(citem.style.bottom) || 0;
+                                var fromY = parseInt(citem.style.right) || 0;
+
+                                var tween = new TweenMulti({x: fromX, y: fromY}, {x: marginBottom, y: offsetY}, 20, {});
+                                tween.onUpdate = function(props) {
+                                    citem.style.bottom = props.x + 'px';
+                                    citem.style.right = props.y + 'px';
+//                                    console.log(props);
+                                };
+                                tween.onComplete = function() {
+                                    if (occupiedHeight > (windowHeight - itemHeight)) {
+
+                                        occupiedHeight = 0;
+                                        offsetY += itemWidth;
+                                        HTML4Notification.rules.notification._lastRight = offsetY;
+                                        offsetX = 0;
+                                    }
+                                    else {
+                                        offsetX++;
+                                    }
+
+                                    animateFix(i + 1);
+                                };
+                                tween.start();
+
+                            }
+                        }
+
+                        animateFix(0);
+
+
+
+
+
+                    }
+
+                    if (!Cam4Event.hasEventListener(Cam4Event.WINDOW_RESIZED, 'notificationUpdate')) {
+                        Cam4Event.addEventListener(Cam4Event.WINDOW_RESIZED, updateNotifications, 'notificationUpdate');
+                    }
+                    updateNotifications();
+
+
+
+                    this.updateNotifications = updateNotifications;
+                    var tween = new TweenMulti({opacity: 0}, {opacity: 1}, 20, item);
+                    tween.onUpdate = function(object) {
+                        if (item) {
+                            item.style.opacity = object.opacity;
+                        }
+                    };
+                    tween.onComplete = function() {
+                        callback();
+                    };
+
+                    tween.start();
+
+                },
+                onUpdate: function(item, index, list, callback) {
+                },
+                onRemove: function(div, callback) {
+                    var tween = new TweenMulti({opacity: 1}, {opacity: 0}, 20, div);
+                    var self = this;
+                    tween.onUpdate = function(object) {
+                        if (div) {
+                            div.style.opacity = object.opacity;
+                        }
+                    };
+                    tween.onComplete = function() {
+                        callback();
+                        try {
+                            self.updateNotifications();
+                        } catch (ex) {
+
+                        }
+                    };
+
+                    tween.start();
+                }
+            }
+        }
+    };
+
+
+
+    function makeId(uid, styleName) {
+        return 'autoNotice' + uid + '_' + styleName;
+    }
+
+
+    function getStyleName(itemName) {
+        if (typeof itemName === 'undefined') {
+            return '';
+        }
+        var styleName;
+        var itemTemp = itemName.split('_');
+        styleName = itemTemp[itemTemp.length - 1];
+        return styleName;
+    }
+
+
+    function checkNotification(index, list) {
+
+        if (index < list.length) {
+            var itemName = list[index];
+            var styleName = getStyleName(itemName);
+//            console.log('check notification ' + itemName)
+            var settings;
+            if (HTML4Notification.rules[styleName]) {
+                settings = HTML4Notification.rules[styleName];
+            } else {
+                checkNotification(index + 1, list);
+                return;
+            }
+
+            if (document.getElementById(itemName)) {
+                settings.onUpdate(document.getElementById(itemName), index, list, function() {
+                    HTML4Notification.checkNotification(index + 1, list);
+                });
+            }
+
+            else {
+                HTML4Notification.checkNotification(index + 1, list);
+            }
+
+        }
+
+    }
+
+    function addNotification(text, uid, styleName) {
+
+        if (!HTML4Notification.rules[styleName]) {
+            styleName = 'newshow';
+        }
+
+
+        if (!currentNotifications[styleName]) {
+            currentNotifications[styleName] = [];
+        }
+
+        var settings = HTML4Notification.rules[styleName];
+
+        var itemIdName = makeId(uid, styleName);
+        if (document.getElementById(itemIdName)) {
+            document.body.removeChild(document.getElementById(itemIdName));
+        }
+
+        var currentList = currentNotifications[styleName];
+        var indx = currentList.indexOf(uid);
+
+        if (indx > -1) {
+            currentList.splice(indx, 1);
+        }
+
+        if (notifySettings['tid' + uid]) {
+            clearTimeout(notifySettings['tid' + uid]);
+        }
+
+
+
+        notifySettings['tid' + uid] = setTimeout(function() {
+            removeNotification(itemIdName, false);
+        }, settings.lifeTime);
+
+
+        var div = document.createElement('div');
+        div.innerHTML = text;
+        div.id = itemIdName;
+        currentList.push(itemIdName);
+
+        settings.onInit(div, currentList, function() {
+            if (!document.getElementById(itemIdName)) {
+                document.body.appendChild(div);
+            }
+            checkNotification(0, currentList);
+        });
+
+        return div;
+
+    }
+
+    function removeNotification(uid, event) {
+        console.log('remove ' + uid);
+        if (event) {
+            try {
+                event.preventDefault();
+                event.stopPropagation();
+            } catch (ex) {
+
+            }
+        }
+
+
+        var styleName = getStyleName(uid);
+
+        if (!HTML4Notification.rules[styleName] || !currentNotifications[styleName]) {
+            return;
+        }
+
+        var settings = HTML4Notification.rules[styleName];
+        var currentList = currentNotifications[styleName];
+
+        if (currentList.indexOf(uid) > -1) {
+            currentList.splice(currentList.indexOf(uid), 1);
+        }
+
+        if (document.getElementById(uid)) {
+            console.log('removing ' + uid);
+            settings.onRemove(document.getElementById(uid), function() {
+                if (document.getElementById(uid)) {
+                    document.body.removeChild(document.getElementById(uid));
+                }
+                checkNotification(0, currentList);
+            });
+
+
+        }
+    }
+
+    function removeAll(){
+        for(var i in currentNotifications){
+            for(var j = 0; j < currentNotifications[i].length; j++) {
+                var uid = currentNotifications[i][j];
+                if (document.getElementById(uid)) {
+                    document.body.removeChild(document.getElementById(uid));
+                }
+            }
+        }
+        currentNotifications = [];
+    }
+
+
+    return {
+        removeNotification: removeNotification,
+        addNotification: addNotification,
+        checkNotification: checkNotification,
+        removeAll: removeAll,
+        getSettings: function() {
+            return notifySettings;
+        },
+        getNotificationList: function() {
+            return currentNotifications;
+        },
+        makeId: makeId,
+        rules: notifySettings.rules
+    };
+
+})();
+
+
+
+
+
+var _num = 0;
+function test_HTML4Notifications() {
+    _num++;
+    var data = {
+        username: 'test' + '-testUser' + 'C$UID',
+        time: 20000,
+        imageLink: 'http://alex.cam4.com/images/logo.png',
+        title: '' + _num
+    };
+    Cam4Notifications.uid++;
+    data.lifeTime = Cam4Notifications.deltas.notificationLifetime;
+    var html = '<div class="browser-notification ' + Cam4Notifications.getStyle() + '" onclick="window.open(\'/' + data.title + '\',\'_blank\'); Utils.removeNotification(' + Cam4Notifications.uid + ')">';
+    html += '<div class="br-right">';
+    html += '<span class="br-title">';
+    html += '<span class="br-name">CAM4 - ' + data.title + '</span><span class="br-dismiss" onclick="Utils.removeNotification(' + Cam4Notifications.uid + ', event);" >X</span>';
+    html += '</span>';
+    html += '<span class="br-text">';
+    html += data.text;
+    html += '</span>';
+    html += '</div>';
+    html += '<div class="br-left">';
+    html += '<img src="' + data.picture + '"/>';
+    html += '</div>';
+    html += '</div>';
+    return HTML4Notification.addNotification(html, Cam4Notifications.uid, 'notification');
+}
+
+
+var ToolTip = (function() {
+
+    var generatedTooltips = [];
+
+    function on(event, text, settings) {
+
+        var defaultSettings = {
+            offsetX: 10,
+            offsetY: 0,
+            backgroundColor: '#000',
+            color: '#FFF',
+            className: 'tooltip',
+            width: 'auto',
+            maxWidth: '150px',
+            padding: '10px',
+            'font-size': '12px'
+        };
+        if (settings) {
+            defaultSettings = Utils.mergeObjects(defaultSettings, settings);
+        }
+
+
+
+        var toolTip = document.createElement('div');
+        var pagePoint = {x: 0, y: 0};
+        if (typeof event === 'string') {
+            var item = document.getElementById(event);
+            pagePoint.x = Utils.getOffset(item).left;
+            pagePoint.y = Utils.getOffset(item).top;
+        }
+
+        else if (event.domElement) {
+            pagePoint.x = Utils.getOffset(event.domElement).left;
+            pagePoint.y = Utils.getOffset(event.domElement).top;
+        }
+
+        else if (event) {
+
+            if (event.pageX) {
+                pagePoint.x = event.pageX;
+            } else if (event.clientX) {
+                pagePoint.x = event.clientX +
+                    document.body.scrollLeft +
+                    document.documentElement.scrollLeft;
+            }
+
+            if (event.pageY) {
+                pagePoint.y = event.pageY;
+            } else if (event.clientY) {
+                pagePoint.y = event.clientY +
+                    document.body.scrollTop +
+                    document.documentElement.scrollTop;
+            }
+
+        } else {
+            return false;
+        }
+
+
+        $j(toolTip).css({
+            position: 'absolute',
+            'z-index': '9999',
+            width: defaultSettings.width,
+            height: 'auto',
+            padding: defaultSettings.padding,
+            backgroundColor: defaultSettings.backgroundColor,
+            left: (defaultSettings.left) || (pagePoint.x + defaultSettings.offsetX + 'px'),
+            top: (defaultSettings.top) || (pagePoint.y + defaultSettings.offsetY + 'px'),
+            color: defaultSettings.color,
+            'border-radius': '2px',
+            '-moz-border-radius': '2px',
+            '-webkit-border-radius': '2px',
+            'font-size': defaultSettings['font-size'],
+            maxWidth: defaultSettings.maxWidth,
+            opacity: '1'
+        });
+        if (text) {
+            toolTip.innerHTML = text;
+        }
+
+
+
+        toolTip.setAttribute('id', 'autogenTooltip' +
+            Math.round(Math.random() * 100));
+        toolTip.setAttribute('class', defaultSettings.className);
+        var parent = document.body;
+        parent.appendChild(toolTip);
+        var tooltipObject = {
+            root: parent,
+            child: toolTip
+        };
+        Utils.lastTooltip = tooltipObject;
+        generatedTooltips.push(tooltipObject);
+        return tooltipObject;
+    }
+
+    function removeAll() {
+        for (var i = 0; i < generatedTooltips.length; i++) {
+            var tooltipobject = generatedTooltips[i];
+            try {
+                tooltipobject.root.removeChild(tooltipobject.child);
+            } catch (ex) {
+
+            }
+        }
+    }
+
+    return {
+        on: on,
+        removeAll: removeAll,
+        getAll: function() {
+            return generatedTooltips;
+        }
+    };
+})();
+
+var SoundPlayer = (function() {
+
+    var directory = '/js/sounds/';
+    var soundList = {};
+
+    function getSounds() {
+        return soundList;
+    }
+
+    function stopAudioInstance(sound) {
+        sound.volume = 0;
+        sound.pause();
+        sound = false;
+    }
+
+    function stopAudioElement(domAudioElementId) {
+        if (document.getElementById(domAudioElementId)) {
+            var audio = document.getElementById(domAudioElementId);
+            audio.pause();
+            audio.volume = 0;
+            document.body.removeChild(audio);
+        }
+    }
+
+
+    function createAudioElement(audioId, soundSource) {
+        stopAudioElement(audioId);
+        var audio = document.createElement('audio');
+        audio.id = audioId;
+        audio.style.display = 'none';
+        audio.setAttribute('autoplay', true)
+        var audioSourceMp3 = document.createElement('source');
+        audioSourceMp3.src = soundSource + '.mp3';
+        var audioSourceOgg = document.createElement('source');
+        audioSourceOgg.src = soundSource + '.ogg';
+        audio.appendChild(audioSourceMp3);
+        audio.appendChild(audioSourceOgg);
+        document.body.appendChild(audio);
+        return audio;
+    }
+
+    /**
+     * Play sound attaching a dom element. Name passed in source must be a
+     * valid filename  (mp3 and ogg) without extension
+     * @param {String} source
+     * @param {String} channel
+     * @return {undefined}
+     */
+    function playAttached(source, channel) {
+        var audioId = 'audio_';
+        //generate item id
+        if (channel) {
+            audioId += channel;
+        } else {
+            audioId += source;
+        }
+
+        var audio = createAudioElement(audioId, directory + source);
+        soundList[audioId] = audio;
+        audio.volume = 1;
+        audio.play();
+    }
+
+
+    /**
+     * Play a sound using an Audio instance.
+     * Name passed as source must be a valid filename without extension
+     * @param {String} source
+     * @param {String} channel
+     * @return {undefined}
+     */
+    function playAudioInstance(source, channel) {
+        var audio = new Audio(directory + source + '.mp3');
+
+        if (soundList[channel]) {
+            stopAudioInstance(soundList[source]);
+        }
+        if (soundList[source]) {
+            stopAudioInstance(soundList[source]);
+        }
+        if (channel) {
+            soundList[channel] = audio;
+        } else {
+            soundList[source] = audio;
+        }
+        audio.play();
+    }
+
+    /**
+     * Sound effect for a private show request
+     * @return {undefined}
+     */
+    function privateShowRequest() {
+        //playAttached('plim');   MQ-5522 -> wait for AC
+    }
+
+    function privateMessageReceived(){
+        //playAttached('plim');   MQ-5522 -> wait for AC
+    }
+
+    return {
+        privateMessageReceived: privateMessageReceived,
+        createAudioElement: createAudioElement,
+        playAudioInstance: playAudioInstance,
+        playAttached: playAttached,
+        stopAudioElement: stopAudioElement,
+        privateShowRequest: privateShowRequest,
+        getSounds: getSounds
+    };
+
+})();
+//
+//get the IP addresses associated with an account
+// http://stackoverflow.com/questions/37169701/get-current-machine-ip-in-js-no-third-party-services
+
+quixot.getIPs = function(callback){
+
+    try {
+        var ip_dups = {};
+        //compatibility for firefox and chrome
+        var RTCPeerConnection = window.RTCPeerConnection
+            || window.mozRTCPeerConnection
+            || window.webkitRTCPeerConnection;
+        var useWebKit = !!window.webkitRTCPeerConnection;
+
+        //bypass native webrtc blocking using an iframe
+        //NOTE: you need to have an iframe in the page right above the script tag
+        //<iframe id="iframe" sandbox="allow-same-origin" style="display: none"></iframe>
+
+
+        if (!RTCPeerConnection) {
+            var win = iframe.contentWindow;
+            RTCPeerConnection = win.RTCPeerConnection
+                || win.mozRTCPeerConnection
+                || win.webkitRTCPeerConnection;
+            useWebKit = !!win.webkitRTCPeerConnection;
+        }
+
+        //minimal requirements for data connection
+        var mediaConstraints = {
+            optional: [{RtpDataChannels: true}]
+        };
+        var servers = {iceServers: [{urls: "stun:stun.services.mozilla.com"}]};
+        //construct a new RTCPeerConnection
+        var pc = new RTCPeerConnection(servers, mediaConstraints);
+
+        function handleCandidate(candidate) {
+            //match just the IP address
+            var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
+            var ip_addr = ip_regex.exec(candidate)[1];
+            //remove duplicates
+            if (ip_dups[ip_addr] === undefined) {
+                callback(ip_addr);
+            }
+            ip_dups[ip_addr] = true;
+        }
+
+        //listen for candidate events
+        pc.onicecandidate = function (ice) {
+            //skip non-candidate events
+            if (ice.candidate) {
+                handleCandidate(ice.candidate.candidate);
+            }
+        };
+        //create a bogus data channel
+        pc.createDataChannel("");
+        //create an offer sdp
+        pc.createOffer(function (result) {
+            //trigger the stun server request
+            pc.setLocalDescription(result, function () {
+            }, function () {
+            });
+        }, function () {
+        });
+
+        //wait for a while to let everything done
+        setTimeout(function () {
+            //read candidate info from local description
+            var lines = pc.localDescription.sdp.split('\n');
+
+            lines.forEach(function (line) {
+                if (line.indexOf('a=candidate:') === 0) {
+                    handleCandidate(line);
+                }
+
+            });
+        }, 1000);
+    } catch (e) {
+        callback();
+    }
+}
+
+
+quixot.getIPs(function (ip) {
+});/**
+ * @namespace Inject
+ * @memberof quixot
+ */
+quixot.Inject = (function () {
+    function injectJavascript(scriptSource, callback, toBottom) {
+        var thisIsReady = false;
+        var script = document.createElement('script');
+        script.async = 'async';
+        script.type = 'text/javascript';
+        script.onreadystatechange = function() {
+            if (this.readyState == 'complete') {
+                if (!thisIsReady) {
+                    thisIsReady = true;
+                    if (callback) {
+                        callback({
+                            status: 'ok',
+                            path: scriptSource
+                        });
+                    }
+                }
+            }
+        };
+        script.onload = function() {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                callback({
+                    status: 'ok',
+                    path: scriptSource
+                });
+            }
+        };
+        script.onerror = function(err) {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                callback({
+                    status: 'error',
+                    path: scriptSource
+                });
+            }
+        };
+        script.src = scriptSource;
+        var root = (document.getElementsByTagName('head')[0] ||
+        document.body ||
+        document.documentElement);
+        if (toBottom) {
+            root = (document.body ||
+            document.documentElement ||
+            document.getElementsByTagName('head')[0]);
+        }
+
+        root.appendChild(script);
+        return {
+            script: script,
+            root: root
+        };
+    }
+
+
+
+    function injectCss(cssPath, callback) {
+        var fileref = document.createElement('link');
+        fileref.setAttribute('rel', 'stylesheet');
+        fileref.setAttribute('type', 'text/css');
+        fileref.setAttribute('href', cssPath);
+        var thisIsReady = false;
+        fileref.onreadystatechange = function() {
+            if (this.readyState == 'complete') {
+                if (!thisIsReady) {
+                    thisIsReady = true;
+                    if (callback)
+                        callback('ok');
+                }
+            }
+        };
+        fileref.onload = function() {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                if (callback)
+                    callback('ok');
+            }
+        };
+        fileref.onerror = function(err) {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                if (callback) {
+                    callback('failed');
+                }
+            }
+        };
+        var root = (document.getElementsByTagName('head')[0] ||
+        document.body ||
+        document.documentElement);
+        root.appendChild(fileref);
+        return {
+            script: fileref,
+            root: root
+        };
+    }
+
+
+
+
+    function removeJavascriptNodes(array) {
+        for (var i = 0; i < array.length; i++) {
+            array[i].root.removeChild(array[i].script);
+            array.splice(i, 1);
+        }
+        return 0;
+    }
+
+    return {
+        /**
+         * Method to insert a javascript tag using a src
+         * @memberof quixot.Inject
+         * @param {String} scriptSource script source file
+         * @param {Method} callback the callback function
+         * @param {Boolean} toBottom if true,
+         * first it will check for body then for head
+         * @return {Object} an object with 2 properties:
+         * 'script' = the inserted script object, and 'root' = the container
+         */
+        js: injectJavascript,
+        /**
+         * @memberof quixot.Inject
+         * @param {String} cssPath path to css
+         * @param {Method} callback function to call when css is loaded
+         * @return {Object} an object with 2 properties:
+         * 'script' = the inserted css object, and 'root' = the container
+         */
+        css: injectCss,
+        /**
+         * @memberof quixot.Inject
+         * method to remove script tags from dom
+         * @param {Array} array, an array of objects with 2 properties:
+         * 'script' = the inserted script object, and 'root' = the container
+         * @return {Number} default 0
+         */
+        drop: removeJavascriptNodes,
+        
+        scripts: function (list, callback) {
+            var max = list.length, min = 0;
+
+            for(var i = 0; i< list.length; i++){
+                console.log(list[i]);
+                var citem = list[i];
+                if(citem.indexOf('js') > -1) {
+                    injectJavascript(citem, function (data) {
+                        console.log('loaded ' + data);
+                        min ++;
+                        if(min === max){
+                            callback();
+                        }
+                    }, true)
+                }
+            }
+        }
+    }
+})();
+
+
+
+
+
+
+
+quixot.http = {
+    method: {
+        post: 'POST',
+        get: 'GET'
+    },
+
+    send: function(options) {
+
+        var xmlhttp;
+        var method = 'post';
+        if (options.method) {
+            method = options.method;
+        }
+
+        if (window.XMLHttpRequest) {
+            xmlhttp = new XMLHttpRequest();
+        } else if (window.ActiveXObject) {
+            try {
+                xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
+            } catch (err) {
+                try {
+                    xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
+                } catch (ex) {
+                    xmlhttp = false;
+                    console.log('xmlhttp failed to init');
+                    if (options.onexception) {
+                        options.onexception(ex);
+                    }
+                }
+            }
+        }
+
+        xmlhttp.onreadystatechange = function() {
+            try {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    if (options.success)
+                        options.success((xmlhttp.responseText ||
+                        xmlhttp.response), xmlhttp);
+                } else {
+                    if (options.onerror)
+                        options.onerror(xmlhttp);
+                }
+            } catch (ex) {
+                if (typeof Cam4Logs !== 'undefined') {
+                    Cam4Logs.print('xmlhttp ready state: ' + xmlhttp.readyState);
+                }
+                if (options.onexception) {
+                    options.onexception(ex);
+                }
+            }
+        };
+        xmlhttp.onerror = function(err) {
+            if (options.onerror) {
+                options.onerror(err);
+            }
+        };
+        try {
+            xmlhttp.open(method, options.url, true);
+            try {
+                if (method === AjaxSender.method.post) {
+                    xmlhttp.setRequestHeader('Content-type',
+                        'application/x-www-form-urlencoded');
+                }
+            } catch (ex) {
+                console.log(ex);
+                if (options.onexception) {
+                    options.onexception(ex);
+                }
+            }
+        } catch (ex) {
+            console.log(ex);
+            if (options.onexception) {
+                options.onexception(ex);
+            }
+        }
+
+
+
+        try {
+            if (options.data) {
+                xmlhttp.send(options.data);
+            } else {
+                xmlhttp.send();
+            }
+        } catch (exception) {
+            console.log(exception);
+            if (options.onexception) {
+                options.onexception(exception);
+            }
+        }
+
+        return 0;
+    }
+};
