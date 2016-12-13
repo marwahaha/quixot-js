@@ -147,31 +147,7 @@
         document.getElementById('sys_os_version').innerHTML = quixot.System.os.version;
 
 
-        var myLogger = quixot.Logger.getInstance('TestLogger', false, function (data) {
-            // console.log(data);
-        });
-        myLogger.log('info', 'info level log');
-        // console.log(myLogger.getLogs().info.length, 1)
-        myLogger.log('custom_level', 'some custom log');
-        // console.log(myLogger.getLogs().info.length, 2)
-//        myLogger.warn('custom warn message');
-        // console.log(myLogger.getLogs().error.length, 1)
-//        myLogger.error('error message');
-        // console.log(myLogger.getLogs().error.length, 2)
-        // console.log(myLogger.getLogs().error[0].stack.length,  myLogger.getLogs().error[0].stack.length > 1)
-        // console.log(myLogger.getLogs());
 
-
-        quixot.Logger.setURLAccessKey('mySecretKey');
-
-        var log4CustomerSupport = quixot.Logger.getInstance('log4CustomerSupport', {consoleAppender: false, fileAppender: false});
-
-        log4CustomerSupport.trace('this log happens client side');
-        log4CustomerSupport.trace('and client could see stored data');
-        log4CustomerSupport.trace('by calling in console');
-        log4CustomerSupport.trace('quixot.Logger.getInstance(\'log4CustomerSupport\').getLogs().trace');
-
-        //    mySecretKey={"ALL":{"fileAppender":true}}
 
 
     </script>

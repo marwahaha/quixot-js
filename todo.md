@@ -31,3 +31,7 @@ quixot.Logger.setURLAccessKey('mySecretKey');
 * browser supported css properties
 * unique property names of supported javascript features (check the .evilUtors) property
 * the ```evilUtors```  are a set of evaluable strings meant to return sensitive information about browser and javascript engine
+
+
+preview html test page:
+http://htmlpreview.github.io/?https://github.com/alex2stf/quixot-js/blob/master/tests.html

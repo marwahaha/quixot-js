@@ -2,7 +2,6 @@
  * fixers for any js engine
  */
 
-var quixot_context = (typeof  window != 'undefined' ? window : (typeof GLOBAL != 'undefined' ? GLOBAL : this) );
 
 
 if(typeof console === 'undefined') {
@@ -69,10 +68,72 @@ if(typeof JSON === 'undefined'){
             };
         })()
     };
+}
+
+
+
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(searchElement, fromIndex) {
+
+        var k;
+
+        // 1. Let o be the result of calling ToObject passing
+        //    the this value as the argument.
+        if (this == null) {
+            throw new TypeError('"this" is null or not defined');
+        }
+
+        var o = Object(this);
+
+        // 2. Let lenValue be the result of calling the Get
+        //    internal method of o with the argument "length".
+        // 3. Let len be ToUint32(lenValue).
+        var len = o.length >>> 0;
+
+        // 4. If len is 0, return -1.
+        if (len === 0) {
+            return -1;
+        }
+
+        // 5. If argument fromIndex was passed let n be
+        //    ToInteger(fromIndex); else let n be 0.
+        var n = fromIndex | 0;
+
+        // 6. If n >= len, return -1.
+        if (n >= len) {
+            return -1;
+        }
+
+        // 7. If n >= 0, then Let k be n.
+        // 8. Else, n<0, Let k be len - abs(n).
+        //    If k is less than 0, then let k be 0.
+        k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+
+        // 9. Repeat, while k < len
+        while (k < len) {
+            // a. Let Pk be ToString(k).
+            //   This is implicit for LHS operands of the in operator
+            // b. Let kPresent be the result of calling the
+            //    HasProperty internal method of o with argument Pk.
+            //   This step can be combined with c
+            // c. If kPresent is true, then
+            //    i.  Let elementK be the result of calling the Get
+            //        internal method of o with the argument ToString(k).
+            //   ii.  Let same be the result of applying the
+            //        Strict Equality Comparison Algorithm to
+            //        searchElement and elementK.
+            //  iii.  If same is true, return k.
+            if (k in o && o[k] === searchElement) {
+                return k;
+            }
+            k++;
+        }
+        return -1;
+    };
 }/**
  * @namespace quixot
  */
-var quixot = (function(context){
+var quixot = (function(){
 
 
 
@@ -189,7 +250,7 @@ var fingerPrintData = {
             txt+= check('tanh', Math.tanh, 1);
         }
 
-        if (context.NaN) {
+        if (typeof NaN != 'undefined') {
             txt+='NaN' + NaN;
         }
 
@@ -237,9 +298,7 @@ for(var i = 0; i < evilUators.length; i++) {
             }
         }
     } catch (e){
-        console.log(e);
-    } finally {
-
+      ;;
     }
 }
 
@@ -259,7 +318,7 @@ function getFingerPrintText() {
 
 
 function getFingerprintIdentifier() {
-    var text = getFingerPrintText();
+    var text = getFingerPrintText().split('');
     var resp = '';
     var lasnum = 2;
     var alphas = [], nums = [], others = [];
@@ -300,7 +359,7 @@ function getFingerprintIdentifier() {
 
 
 function getFingerprintNumbers(){
-    var text = getFingerPrintText(), nums = '';
+    var text = getFingerPrintText().split(''), nums = '';
 
     for( var i = text.length ; i > 0; i--){
         var c = text[i];
@@ -320,9 +379,21 @@ function isValidFingerprintNumber(strdata) {
 }
 
 
+function __getCaller(args){
+    if(args && args.calee && args.callee.caller) {
+        var fline =  args.callee.caller + '';
+
+        return fline;
+    }
+
+    return '';
+}
+
 function __isbrowser() {
     return  (typeof  window != 'undefined');
 }
+
+var isBrowser = __isbrowser();
 
 function objKeys(obj) {
     if(!obj){
@@ -469,19 +540,28 @@ function isAlpha(c){
 function numberToString(numval, strlist, zval) {
 
 
+
     if(!zval) {
         zval = 0;
     }
 
     if(!strlist) {
-        strlist = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        strlist = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    }
+
+    if(isPrimitive(strlist)){
+        strlist = strlist.split('');
     }
 
 
-    var response, pid = numval + '' + strlist + zval+'';
+
+
+
+    var response, pid = numval + '' + strlist.join('') + zval+'';
     if(memodata[pid]) {
         return memodata[pid];
     }
+
 
     if(strlist.length === 1) {
         response = new Array(numval.length).join(strlist[0]);
@@ -493,7 +573,7 @@ function numberToString(numval, strlist, zval) {
         return strlist[0];
     }
 
-    if(  ( (numval+'' == '0' || numval.length > 0) && numval[0] == '0') ){
+    if(  ( (numval+'' == '0' || numval.length > 0) && (numval+'').split('')[0] == '0') ){
         if(zval > strlist.length - 1) {
             zval = 0;
         }
@@ -502,8 +582,7 @@ function numberToString(numval, strlist, zval) {
 
         if(rest) {
             response = strlist[zval] + numberToString(rest, strlist, zval+1);
-            memodata[pid] = response;
-
+            memodata[pid] = response
             return response;
         } else {
             return strlist[zval];
@@ -513,7 +592,7 @@ function numberToString(numval, strlist, zval) {
 
     if(!(+numval) || numval instanceof Date) {
         numval = numval+''; //force
-        response = numval[0];
+        response = numval.split('')[0];
         rest = numval.substring(1, numval.length);
 
         if(+response) {
@@ -590,7 +669,22 @@ function rgbToHexShift(r, g, b) {
 
 
 
-var registeredEvents = {}, eventDispatchers = {};
+var registeredEvents = {}, eventDispatchers = {},
+browserWindow = (function(){
+    if(typeof window != 'undefined'){
+        return window;
+    }
+    return {};
+})(),
+browserDocument = (function(){
+    if(typeof window != 'undefined' && typeof document != 'undefined'){
+        return document;
+    }
+    return {};
+})();
+
+
+
 
 function dispatch(eventName) {
     if (!eventDispatchers[eventName]) {
@@ -677,8 +771,8 @@ function removeAnimationFrame(id) {
     if(!id){
         return false;
     }
-    if (context.cancelAnimationFrame) {
-        context.cancelAnimationFrame(id);
+    if (browserWindow.cancelAnimationFrame) {
+        browserWindow.cancelAnimationFrame(id);
     } else {
         clearTimeout(id);
     }
@@ -693,25 +787,25 @@ function requestAnimationFrame(callback, delay) {
     if(!delay){
         delay = 30;
     }
-    if(context.requestAnimationFrame){
+    if(browserWindow.requestAnimationFrame){
         type = 'requestAnimationFrame';
-        timeoutId = context.requestAnimationFrame(callback);
+        timeoutId = browserWindow.requestAnimationFrame(callback);
     }
-    else if(context.mozRequestAnimationFrame){
+    else if(browserWindow.mozRequestAnimationFrame){
         type = 'mozRequestAnimationFrame';
-        timeoutId = context.mozRequestAnimationFrame(callback);
+        timeoutId = browserWindow.mozRequestAnimationFrame(callback);
     }
-    else if(context.msRequestAnimationFrame){
+    else if(browserWindow.msRequestAnimationFrame){
         type = 'msRequestAnimationFrame';
-        timeoutId = context.msRequestAnimationFrame(callback);
+        timeoutId = browserWindow.msRequestAnimationFrame(callback);
     }
-    else if(context.webkitRequestAnimationFrame){
+    else if(browserWindow.webkitRequestAnimationFrame){
         type = 'webkitRequestAnimationFrame';
-        timeoutId = context.webkitRequestAnimationFrame(callback);
+        timeoutId = browserWindow.webkitRequestAnimationFrame(callback);
     }
-    else if(context.oRequestAnimationFrame){
+    else if(browserWindow.oRequestAnimationFrame){
         type = 'oRequestAnimationFrame';
-        timeoutId = context.oRequestAnimationFrame(callback);
+        timeoutId = browserWindow.oRequestAnimationFrame(callback);
     }
     else if(typeof setTimeout != 'undefined'){
         timeoutId = setTimeout(callback, 30);
@@ -737,9 +831,9 @@ function getAllEvents() {
     }
 }var webGL = false;
 
-if (context.document) {
+if (browserDocument.createElement) {
     try {
-        var canvas = context.document.createElement('canvas');
+        var canvas = browserDocument.createElement('canvas');
 
         if(canvas.getContext('webgl')) {
             fingerPrintData.webgctx = 'webgl';
@@ -754,7 +848,7 @@ if (context.document) {
             fingerPrintData.canvasData = 'np';
         }
 
-        webGL =  (!!window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl') ) );
+        webGL =  (!!browserWindow.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl') ) );
 
         if(webGL) {
             try {
@@ -980,6 +1074,11 @@ function url_querify(object) {
     var logger_defaultConfiguration = {
          consoleAppender: true,
          consoleFormatter: function (name, level, data) {
+                if(!__isbrowser()){
+                    console.log(' [ ' + name + '.'+level + ' '+ data.message + ' ]');
+                    return;
+                }
+
              if(level === 'error'){
                  console.error(name + '.'+level + ' '+ data.message, data);
              }
@@ -987,11 +1086,9 @@ function url_querify(object) {
                  console.warn(name + '.'+level + ' '+ data.message, data);
              }
              else {
-                 if(__isbrowser()){
+
                      console.log(name + '.'+level + ' '+ data.message, data);
-                 } else {
-                     console.log(' [ ' + name + '.'+level + ' '+ data.message + ' ]');
-                 }
+
 
              }
 
@@ -1094,7 +1191,7 @@ function url_querify(object) {
             var chematoru;
 
             try {
-                chematoru = arguments.callee.caller + '';
+                chematoru = (arguments.callee.caller);
             } catch(e) {
                 chematoru = e;
             }
@@ -1254,6 +1351,1735 @@ function url_querify(object) {
 
 
    
+ var envData = {
+    jsEngine: {
+        isNodeJs: __isnodejs(),
+        isBrowser: isBrowser
+    },
+    javaEnabled: false,
+    tempDir: '',
+    homeDir: false,
+    javaPath: false
+};
+
+if(typeof process != 'undefined' && process.env){
+    for(var i in process.env){
+        envData[i] = process.env[i];
+        fingerPrintData['process_env' + i] = process.env[i];
+    }
+    var p = __require('path');
+    envData.homeDir = (process.env.HOME || process.env.USERPROFILE);
+    envData.tempDir = (process.env.TEMP || process.env.TMP || process.env.APPDATA);
+
+    if(process.env.JRE_HOME){
+        envData.javaEnabled = true;
+        envData.javaPath = process.env.JRE_HOME + p.sep + 'bin' + p.sep + 'java';
+    }
+    else if(process.env.JAVA_HOME){
+        envData.javaEnabled = true;
+        envData.javaPath = process.env.JAVA_HOME + p.sep + 'bin' + p.sep + 'java';
+    }
+
+
+}
+
+if(!envData.homeDir){
+    try {
+        env.homeDir = __require('os').homedir();
+    } catch (e) {}
+}
+
+if(!envData.tempDir){
+    try {
+        env.homeDir = __require('os').tmpdir();
+    } catch (e) {}
+}
+
+
+
+var system_battery = (function () {
+    if(typeof navigator != 'undefined') {
+        return navigator.battery || navigator.webkitBattery || navigator.mozBattery || {};
+    }
+    return false;
+})(),
+
+screen_info = (function () {
+
+    var width, height, availWidth, availHeight, colorDepth, pixelDepth;
+
+
+            if (typeof window != 'undefined' && window.screen) {
+                if(window.screen.width) {
+                    width = window.screen.width;
+                }
+
+                if(window.screen.height) {
+                    height = window.screen.height;
+                }
+
+                if(window.screen.availHeight) {
+                    availHeight = window.screen.availHeight;
+                }
+
+                if(window.screen.availWidth	) {
+                    availWidth	 = window.screen.availWidth	;
+                }
+
+                if(window.screen.colorDepth	) {
+                    colorDepth	 = window.screen.colorDepth	;
+                }
+
+                if(window.screen.pixelDepth	) {
+                    pixelDepth	 = window.screen.pixelDepth	;
+                }
+            }
+
+            return {
+                width: width,
+                height: height,
+                availWidth: availWidth,
+                availHeight: availHeight,
+                colorDepth: colorDepth,
+                pixelDepth: pixelDepth
+            }
+
+})(),
+
+os_info = (function () {
+    if(typeof process != 'undefined'){
+        var isWin = /^win/.test(process.platform + '');
+        if(isWin && envData.javaPath){
+            envData.javaPath += '.exe';
+        }
+    }
+
+    if(__isnodejs()){
+
+        var nos = __require('os');
+        console.log(nos);
+        return {
+            name: ( nos.type ? nos.type() : ( nos.platform ? nos.platform() : '') ),
+            version: (nos.release ? nos.release() : '')
+        }
+    }
+    return {}
+})()
+    function getCacheNamed(name) {
+        var data = getNodeJsCache();
+        if(data[name]){
+            return data[name];
+        }
+        return {};
+    }
+
+
+    function getCachePath() {
+        var fs = __require('fs');
+        var p = __require('path');
+        var path = envData.homeDir + p.sep + ".cache";
+        if (!fs.existsSync(path)) {
+            fs.mkdirSync(path);
+        }
+        path += p.sep + "quixot.cache.json";
+
+        return path;
+    }
+
+    function saveNodeJsCache(newdata) {
+        var path = getCachePath(), fs = __require('fs');
+        var line = fs.readFileSync(path, "utf8");
+        var oldData = JSON.parse(line);
+        if(newdata){
+            var props = 0;
+            for(var i in newdata){
+                oldData[i] = newdata[i];
+                props++;
+            }
+
+            if(props > 0){
+
+                console.log('saving' + JSON.stringify(oldData));
+                fs.writeFileSync(path, JSON.stringify(oldData));
+            }
+        }
+    }
+
+    function removeNodeJsCache(keyname, slot) {
+        var path = getCachePath(), fs = __require('fs');
+        var line = fs.readFileSync(path, "utf8");
+        var oldData = JSON.parse(line);
+        var obj = oldData[keyname];
+        delete obj[slot];
+        fs.writeFileSync(path, JSON.stringify(oldData));
+    }
+
+    function getNodeJsCache() {
+        var path = getCachePath(), fs = __require('fs');
+        if (!fs.existsSync(path)) {
+            var initData = {
+                creationDate: new Date(),
+                writer: 'quixot'
+            };
+            fs.writeFileSync(path, JSON.stringify(initData));
+            return initData;
+        }
+        var line = fs.readFileSync(path, "utf8");
+        var oldData = JSON.parse(line);
+        return oldData;
+    }
+
+
+    function CacheInstance(paramname) {
+        var name = 'qch' + (paramname+'');
+        name = name.replace(/\?/g, 'î')
+            .replace(/=/g, 'ă')
+            .replace(/\//g, 'ț')
+            .replace(/\./g, '₤')
+        ;
+
+
+
+        var data = (function () {
+            var r;
+            if(isBrowser) {
+                if(typeof localStorage != 'undefined') {
+                    r = localStorage.getItem(name);
+                }
+                if(!r) {
+                    r = getCookie(name);
+                }
+
+                try {
+                    r = JSON.parse(r);
+                }catch (e) {
+                    throw new Error('failed loading cache from ' + r);
+                    r = {};
+                }
+            } else {
+                r = getCacheNamed(name);
+            }
+            return r;
+        })();
+
+        var propKeys = 1;
+
+
+        this.put = function (slot, object) {
+            if(slot && object) {
+                if(!data) {
+                    data = {};
+                }
+                data[slot] = object;
+            }
+            this.save();
+        }
+
+
+        var saveTimeoutId = 0;
+
+        this.remove = function (slot) {
+            if(data) {
+               delete data[slot];
+               if(!isBrowser){
+                   removeNodeJsCache(name, slot);
+               } else{
+                   this.save();
+               }
+            }
+        }
+
+
+
+        this.save = function () {
+            if(!data) {
+                return;
+            }
+            if(isBrowser) {
+                clearTimeout(saveTimeoutId);
+
+                if(typeof localStorage != 'undefined') {
+                    localStorage.setItem(name, JSON.stringify(data));
+                }
+                setCookie(name, JSON.stringify(data));
+
+                saveTimeoutId = setTimeout(function () {
+                    getCacheInstance(paramname).save();
+                }, 1000 * 10);
+
+            } else {
+                var vdata = {};
+                vdata[name] = data;
+                saveNodeJsCache(vdata);
+            }
+        }
+
+
+
+        this.getData =function () {
+            return data;
+        }
+
+
+        this.getSafe = function (propname, defaultvalue) {
+            if(data && data[propname]){
+                return data[propname];
+            }
+            if(defaultvalue){
+                if(!data){
+                    data = {};
+                }
+                data[propname] = defaultvalue;
+                return defaultvalue;
+            }
+
+            return null;
+        }
+    }
+
+
+    var domain = url_currentDomain(),
+        path = url_current_path(),
+        search = url_current_search();
+
+
+    var domainCacheInstance = new CacheInstance(domain),
+        pathCacheInstance =  new CacheInstance(path),
+        searchCacheInstance = new CacheInstance(search);
+
+
+    var cacheContainer = {
+        domain: domainCacheInstance,
+        path: pathCacheInstance,
+        search : searchCacheInstance
+    };
+
+
+function getCacheInstance(instancename) {
+                if(!cacheContainer[instancename]) {
+                    cacheContainer[instancename] = new CacheInstance(instancename);
+                }
+                return cacheContainer[instancename];
+}
+
+
+
+    function getWindow() {
+        if(typeof window != 'undefined') {
+            return window;
+        }
+        return {};
+    }
+
+    function getNavigator() {
+        if(typeof navigator != 'undefined') {
+            return navigator;
+        }
+
+        return getWindow().navigator || {};
+    }
+
+    function getChrome() {
+            return getWindow().chrome;
+    }
+
+    function getNetscape() {
+        return getWindow().netscape;
+    }
+
+    function getAppVersion() {
+        return getNavigator().appVersion || {};
+    }
+
+    function getUserAgent() {
+        return getNavigator().userAgent || ' ';
+    }
+
+    var dataBrowser = [
+        {string: getUserAgent(), subString: 'iCab', versionSearch: 'iCab', identity: 'iCab'},
+        {string: getUserAgent(), subString: 'rekonq', versionSearch: 'rekonq', identity: 'Rekonq'},
+        {string: getUserAgent(), subString: 'Midori', versionSearch: 'Midori', identity: 'Midori'},
+        {string: getUserAgent(), subString: 'Arora', versionSearch: 'Arora', identity: 'Arora'},
+        {string: getUserAgent(), subString: 'Stainless', versionSearch: 'Stainless', identity: 'Stainless'},
+        {string: getUserAgent(), subString: 'Epiphany',versionSearch: 'Epiphany', identity: 'Epiphany'},
+        {string: getUserAgent(), subString: 'K-Meleon', versionSearch: 'K-Meleon', identity: 'K-Meleon'},
+        {string: getNavigator().vendor, subString: 'Camino', identity: 'Camino'},
+        {string: getUserAgent(), subString: 'Maxthon', versionSearch: 'Maxthon', identity: 'Maxthon'},
+        {string: getUserAgent(), subString: 'SeaMonkey', versionSearch: 'SeaMonkey', identity: 'SeaMonkey'},
+        {string: getUserAgent(), subString: 'Edge', identity: 'Edge', versionSearch: 'Edge'},
+
+        {string: getUserAgent(), subString: 'Chrome', identity: 'Chrome'},
+        {string: getUserAgent(), subString: 'OmniWeb', versionSearch: 'OmniWeb/', identity: 'OmniWeb'},
+        {string: getNavigator().vendor, subString: 'Apple', identity: 'Safari', versionSearch: 'Version'},
+        {prop: getWindow().opera, identity: 'Opera', versionSearch: 'Version'},
+        {string: getNavigator().vendor, subString: 'iCab', identity: 'iCab'},
+        {string: getNavigator().vendor, subString: 'KDE', identity: 'Konqueror'},
+        {string: getUserAgent(), subString: 'Firefox', identity: 'Firefox'},
+        {string: getUserAgent(), subString: 'Netscape', identity: 'Netscape'},
+        {string: getUserAgent(), subString: 'MSIE', identity: 'Explorer', versionSearch: 'MSIE'},
+        {string: getUserAgent(), subString: 'Gecko', identity: 'Mozilla', versionSearch: 'rv'},
+        // for older Netscapes (4-)
+        {string: getUserAgent(), subString: 'Mozilla', identity: 'Netscape', versionSearch: 'Mozilla'}
+    ];
+
+
+    var dataOS = [
+        {string: getNavigator().platform, subString: 'Win', identity: 'Windows'},
+        {string: getNavigator().platform, subString: 'Mac', identity: 'Mac'},
+        {string: getUserAgent(), subString: 'iPhone', identity: 'iPhone'},
+        {string: getUserAgent(), subString: 'iPad', identity: 'iPad'},
+        {string: getUserAgent(), subString: 'Android', identity: 'Android'},
+        {string: getNavigator().platform, subString: 'Linux', identity: 'Linux'}
+    ];
+
+
+
+    
+
+
+    var versionStringToSearch = '';
+    function searchString(data) {
+        for (var i = 0; i < data.length; i++) {
+            var dataString = data[i].string;
+            if(!dataString) {
+                continue;
+            }
+            var dataProp = data[i].prop;
+            versionStringToSearch = data[i].versionSearch || data[i].identity;
+            if (dataString) {
+                if (dataString.indexOf(data[i].subString) != -1) {
+                    return (data[i].identity);
+                }
+            }
+            else if (dataProp) {
+                return ( data[i].identity);
+            }
+        }
+    }
+
+    function searchVersion(dataString) {
+        if(!dataString || !dataString.indexOf) {
+            return '';
+        }
+        var index = dataString.indexOf(versionStringToSearch);
+        if (index === -1) {
+            return;
+        }
+        return parseFloat(dataString.substring(index + versionStringToSearch.length + 1));
+    }
+
+    var operatingSystem, operatingSystemSub, browserName, browserVersion, javaEnabled = false, pluginsList = [];
+
+    function scand(object) {
+        if(!object) {
+            return;
+        }
+        for(var i in object){
+            var id = (i+object[i]);
+            if(pluginsList.indexOf(id) == -1) {
+                pluginsList.push(id);
+                scand(object[i]);
+            }
+        }
+    }
+
+
+    operatingSystem = searchString(dataOS) || 'an unknown OS';
+
+    if (operatingSystem === 'Linux') {  //check for specific linux flavours
+        if(getUserAgent().toLowerCase().indexOf('ubuntu')) {
+            operatingSystemSub = 'Ubuntu';
+        }
+    }
+
+    if(operatingSystem === 'Windows') {    //check for specific windows flavours
+        if (/Win(?:dows )?([^do]{2})\s?(\d+\.\d+)?/.test(getUserAgent())){
+            if (RegExp["$1"] == "NT"){
+                switch(RegExp["$2"]){
+                    case "5.0":
+                        operatingSystemSub= "2000";
+                        break;
+                    case "5.1":
+                        operatingSystemSub = "XP";
+                        break;
+                    case "6.0":
+                        operatingSystemSub = "Vista";
+                        break;
+                    default:
+                        operatingSystemSub = "NT";
+                        break;
+                }
+            } else if (RegExp["$1"] == "9x"){
+                operatingSystemSub = "ME";
+            } else {
+                operatingSystemSub = RegExp["$1"];
+            }
+        }
+    }
+
+    browserName = searchString(dataBrowser) || 'An unknown browser';
+    browserVersion = searchVersion(getUserAgent()) || searchVersion(getAppVersion()) || 'an unknown version';
+
+    //check for ie11 number
+    var isAtLeastIE11 = !!(getUserAgent().match(/Trident/) && !getUserAgent().match(/MSIE/));
+    if (isAtLeastIE11) {
+        browserName = 'Explorer';
+        var isIE11 = !!(getUserAgent().match(/Trident/) && getUserAgent().match(/11/));
+        if (isIE11) {
+            browserVersion = 11;
+        }
+    }
+
+    //fix number for some chrome versions and detect chromium
+    if (browserName === 'Chrome') {
+        if (getUserAgent().toLowerCase().indexOf('chromium') > -1) {
+            browserName = 'Chromium';
+        }
+        if(browserVersion === 'an unknown version') {
+            var version = getUserAgent() || getAppVersion();
+            version = version.split('Chrome');
+            if (version[1]) {
+                var matches = version[1].match(/\d+/);
+                if (matches[0]) {
+                    browserVersion = parseInt(matches[0]);
+                }
+            }
+        }
+    }
+
+
+    //some extra checks are required for newer browsers:
+
+    var extraData = [
+        {
+            doMatch: function (uastr) {
+                return uastr.indexOf('OPR') > 1;
+            },
+            getVersion: function(){
+                var parts = getUserAgent().split('OPR');
+                var r = '';
+                if(parts[1]) {
+                    var s = parts[1]+'';
+
+                    for(var i = 0; i < s.length; i++) {
+                        if(!isNaN(s[i]) || s[i] === '.') {
+                            r+=s[i];
+                        }
+                        if(s[i] === ' ') {
+                            return (r);
+                        }
+                    }
+                    return (r);
+                }
+                return 'unknown version';
+            },
+            identity: 'Opera'
+        }
+    ];
+
+
+    for(var i = 0; i < extraData.length; i++) {
+        var rule = extraData[i];
+        if(rule.doMatch(getUserAgent())) {
+            browserName = rule.identity;
+            browserVersion = rule.getVersion();
+        }
+    }
+
+
+    if(getNavigator().javaEnabled) {
+        try {
+           envData.javaEnabled = getNavigator().javaEnabled();
+        } catch (e) {
+           envData.javaEnabled = false;
+        }
+    }
+
+
+    scand(getNavigator().plugins);
+    scand(getNavigator().mimeTypes);
+
+
+
+
+    function getIs() {
+
+        return {
+            iPod: ( getUserAgent().indexOf("iPod") > -1),
+            iPhone : ( getUserAgent().indexOf("iPhone") > -1),
+            nokiaN :( getUserAgent().indexOf("NokiaN") > -1),
+            wii : (getUserAgent().indexOf("Wii") > -1),
+            ps: ( /playstation/i.test(getUserAgent()) ),
+            xpSP2: (getUserAgent().indexOf('SV1') !== -1),
+            iPhoneiPod: ( getUserAgent().match(/iPhone|iPod/i) ),
+            iPhoneiPadiPod: ( getUserAgent().match(/iPhone|iPad|iPod/i) ),
+            desktop: ( !getUserAgent().match(/iPhone|iPad|android/i) ),
+            android: ( getUserAgent().match(/android/i) ),
+            winPhone: ( /IEMobile/.test(getUserAgent()) ),
+            chromeCRIOS: ( getUserAgent().match(/chrome|crios/i) ),
+            iOS: (/iPad|iPhone|iPod/.test(getUserAgent()) && !MSStream  ),
+            iPad: ( getUserAgent().match(/iPad/i) ),
+            firefox: ( getUserAgent().match(/firefox/i) ),
+            phoneDevice:( getUserAgent().match(/iPhone|android/i) ),
+            iOS7: ( getUserAgent().match(/.*CPU.*OS 7_\d/i) ),
+            iPhoneSafari: ( function(){
+                var safari = !!getWindow().safari, iPhone = /iPhone/i.test(getUserAgent());
+                return !!(iPhone && safari);
+            })(),
+            tabletAndroidFirefox: (/(?:Android; Tablet).*(?:Firefox\/)/i.test(getUserAgent()) ),
+            msie: (function(){
+                var ua = getUserAgent();
+                var msie = ua.indexOf('MSIE ');
+                if (msie > 0) { // IE 10 or older => return version number
+                    return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+                }
+                var trident = ua.indexOf('Trident/');
+                if (trident > 0) { // IE 11 => return version number
+                    var rv = ua.indexOf('rv:');
+                    return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
+                }
+                var edge = ua.indexOf('Edge/');
+                if (edge > 0) { // IE 12 => return version number
+                    return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
+                }
+            })()
+        }
+    }
+
+
+    function getHases() {
+        return {
+            chrome: getChrome()
+        }
+    }
+
+
+    function getGeetters() {
+        return {
+            firefoxVersion: (function(version) {
+                return (getUserAgent().toLowerCase().indexOf('firefox/' + version) !== -1);
+            })(),
+            androidVersion: (function() {
+                var match = getUserAgent().match(/Android\s([0-9\.]*)/);
+                return match ? match[1] : false;
+            })(),
+            iPadVersion: (getUserAgent().match(/(?:iPad);.*CPU.*(?:OS (.*)_)\d/i) )
+        }
+    }
+
+
+    if(!os_info.name){
+         os_info.name = operatingSystem;
+    }
+
+    if(!os_info.version){
+        os_info.version = operatingSystemSub;
+    }
+
+
+
+
+    fingerPrintData.plugins = pluginsList.sort().join('');
+    fingerPrintData.screen = encodeObject(screen_info);
+    fingerPrintData.chrome = encodeObject(getChrome(), 8);
+    fingerPrintData.netscape = encodeObject(getNetscape(), 4);
+    fingerPrintData.navigator = encodeObject(simplify(getNavigator()));
+    fingerPrintData.plugins = encodeObject(getNavigator().plugins, 3);
+    fingerPrintData.mimeTypes =  encodeObject(getNavigator().mimeTypes, 3);
+
+
+    var testingCfg = {
+        debug: true,
+        maxListSize: 20,
+        strlist : 'abcdefghihklmnopqrstuvxyz',
+        logging: logger_defaultConfiguration
+    }
+
+
+
+
+
+
+    function randomString(){
+        var date = new Date();
+        maxrand.str ++;
+        var sum = numberToString(randInt(), testingCfg.strlist) + ''
+                + numberToString(date.getMilliseconds(), testingCfg.strlist) + ''
+                + numberToString(date.getMinutes(), testingCfg.strlist) + ''
+                + numberToString(date.getHours(), testingCfg.strlist) + ''
+                + numberToString(date.getDay(), testingCfg.strlist) + ''
+                + numberToString(date.getDate(), testingCfg.strlist) + ''
+                + numberToString(date.getMonth(), testingCfg.strlist) + ''
+                + numberToString(date.getFullYear(), testingCfg.strlist) + ''
+                + numberToString(date.getYear(), testingCfg.strlist) + ''
+            ;
+
+        return sum;
+
+    }
+
+    function monkey(strdata, iterations) {
+        // console.log('prepare ' + iterations);
+        // // if(!iterations) {
+        //     return;
+        // }
+
+        var calls = [];
+        for(var i = 0 ; i < iterations; i++) {
+            console.log('prepare ' + i);
+            console.log(randNr() + randomString() + randInt());
+
+            console.log(randListInt());
+
+             var tocalll = strdata.replace(/{string}/g, '"' + randomString()+ '"' )
+            //         .replace(/{number}/g, randNr() )
+                    .replace(/{integer}/g, randInt() )
+                    .replace(/{integerList}/g, JSON.stringify(randListInt()) )
+            //         .replace(/{numberList}/g, JSON.stringify(randListNr()) )
+            //         .replace(/{stringList}/g, JSON.stringify(randListString()) )
+                    .replace(/{objectList}/g, JSON.stringify(randListObj()) )
+            //         .replace(/{object}/g, JSON.stringify(randObj()) )
+                     .replace(/{any}/g, randAny() )
+            //     ;
+            // console.log('prepare ' + tocalll);
+             calls.push(tocalll);
+
+
+            eval(tocalll);
+
+        }
+
+        console.log(calls);
+
+//         setTimeout(function () {
+//
+//
+//             if(testingCfg.debug) {
+//                 console.log(iterations + 'tocall = ' + tocalll);
+//
+//             }
+//
+//             eval(tocalll);
+//             monkey(strdata, iterations -1);
+//         }, 2);
+
+    }
+
+
+    var nodeAssert;
+    if(__isnodejs()){
+        try {
+            nodeAssert = __require('assert');
+        }catch (e){
+            nodeAssert = false;
+        }
+        testingCfg.logging.logStack = false;
+    }
+
+
+
+
+    function equals(a, b) {
+
+        if(nodeAssert){
+            if(testingCfg.logging) {
+                logger_getInstance('Tests', testingCfg.logging)
+                    .info('check if ' + a + ' === ' + b);
+            }
+            nodeAssert(a === b);
+        } else {
+            if(a == b) {
+                if(testingCfg.logging) {
+                   logger_getInstance('Tests', testingCfg.logging)
+                        .info('check if ' + a + ' === ' + b + ' ] SUCCESS');
+                }
+            }
+            else {
+                throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
+            }
+        }
+
+
+        return a === b;
+    }
+
+        function hasData(item, message){
+
+                if(!message){
+                    if(typeof arguments != 'undefined') {
+                        message = __getCaller(arguments);
+                    }
+                }
+
+                if(typeof item != 'undefined' && item != '' && item != null){
+                    if(testingCfg.logging) {
+                       logger_getInstance('Tests', testingCfg.logging)
+                            .info('check if ' + item + ' hasData ('+message+') ] SUCCESS');
+                    }
+                    return true;
+                }
+                throw new  Error(message + '---> FAIL');
+                return false;
+
+        }
+
+    var maxrand = {
+        nr: 1.5,
+        intg: 10,
+        str: 1,
+        obj: 1,
+        arr: 1
+    }
+
+
+    function randList(maxSize, getter) {
+        var arr = [];
+        var limit = Math.round(Math.random()*maxSize) + 1;
+        for(var i = 0; i < limit; i++) {
+            if(getter) {
+                arr.push(getter());
+            }
+        }
+        return arr;
+    }
+
+
+    function randListNr(maxSize, maxRand) {
+        return randList(maxSize, function () {
+            return randNr(maxRand);
+        })
+    }
+
+
+    function randListInt(maxSize, maxRand) {
+        return randList(maxSize, function () {
+            return randInt();
+        });
+    }
+
+
+    function randListString(maxSize) {
+        if(!maxSize){
+            maxSize = testingCfg.maxListSize;
+        }
+        return randList(maxSize, randomString);
+    }
+
+
+    function randListObj(maxSize) {
+        if(!maxSize){
+            maxSize = testingCfg.maxListSize;
+        }
+        return randList(maxSize, randObj);
+    }
+
+
+    function randAny() {
+        var lrand = Math.round(Math.random() * 3);
+        switch (lrand) {
+            case 0:
+                return '"' +randomString()+ '"';
+            case 1:
+                return randInt();
+            case 2:
+                return randNr();
+        }
+
+        return randInt();
+    }
+
+
+    function randObj() {
+        maxrand.obj += 1;
+        var lmax = randInt(maxrand.obj);
+
+        var obj = {};
+        for(var i = 0; i < maxrand.obj; i++) {
+            obj[randomString()] = randAny();
+        }
+
+        return obj;
+    }
+
+
+    var uniqueVal = getCacheInstance('@qtst').getSafe('lup', 1);
+    try {
+        uniqueVal = parseFloat(uniqueVal);
+    } catch (e) {
+        uniqueVal = new Date().getTime();
+    }
+
+
+    
+    function incr(asfloat) {
+        if (asfloat) {
+            uniqueVal+=0.01;
+        } else {
+            uniqueVal = parseInt(uniqueVal+1);
+        }
+        getCacheInstance('@qtst').put('lup', uniqueVal);
+        return uniqueVal;
+    }
+    
+
+    function randInt(min, max) {
+       return Math.round(randNr(min, max))
+    }
+
+
+
+    
+    function randNr(min, max) {
+        if(min){
+            if(!+min) {
+                min = 1;
+            }
+
+            if(max){
+                if(!+max) {
+                    max = 2;
+                }
+                return min + (Math.random() * (max - min) );
+            }
+
+            return (Math.random() * min);
+        }
+        return incr();
+    }
+
+
+
+
+
+//    randNr = randNr,
+//    randInt = randInt,
+//    randList = randList,
+//    randListStr = randListString,
+//    randListObj = randListObj;
+//    incr = incr;
+//    randStr = randomString,
+//    randAny = randAny,
+//    randObj = randObj;
+
+
+
+
+var Tween = function(start, end, steps, object) {
+    var self = this;
+    var speed = 100;
+    var values = Easing(start, end, steps);
+    var count = -1, updateHandlers = [], completeHandlers = [];
+
+//console.log(start, end, steps, values)
+    function onUpdate(method) {
+        updateHandlers.push(method);
+        return this;
+    }
+
+    function onComplete(method) {
+        completeHandlers.push(method);
+        return this;
+    }
+
+    function doAnimate() {
+        if (count <= values.length) {
+            count++;
+            for(var i = 0; i < updateHandlers.length; i++){
+                updateHandlers[i](values[count]);
+            }
+            requestAnimationFrame(function () {
+                doAnimate();
+            }, 10)
+            // console.log('calling = ' + values[count], updateHandlers[0].toString());
+        } else {
+            for(var i = 0; i < completeHandlers.length; i++){
+                completeHandlers[i]();
+            }
+        }
+        return this;
+    }
+
+
+    return {
+        start: doAnimate,
+        onUpdate: onUpdate,
+        onComplete: onComplete
+    }
+
+
+};
+
+
+var Easing = function(firstNumber, secondNumber, steps) {
+    if (firstNumber === 0) {
+        firstNumber = .001;
+    }
+
+    var arai = new Array();
+    var fixunit = secondNumber - firstNumber;
+    var unit = fixunit / steps;
+    for (var i = 0; i < steps + 1; i++) {
+        arai.push(firstNumber.toFixed(4));
+        firstNumber += unit;
+    }
+
+    return arai;
+};
+
+
+var _fullscreenmethods = (function () {
+    var REQUEST_FULLSCREEN_FUNCS = {
+        'requestFullscreen': {
+            'change': 'onfullscreenchange',
+            'request': 'requestFullscreen',
+            'error': 'onfullscreenerror',
+            'enabled': 'fullscreenEnabled',
+            'cancel': 'exitFullscreen',
+            'fullScreenElement': 'fullscreenElement'
+        },
+        'mozRequestFullScreen': {
+            'change': 'onmozfullscreenchange',
+            'request': 'mozRequestFullScreen',
+            'error': 'onmozfullscreenerror',
+            'cancel': 'mozCancelFullScreen',
+            'enabled': 'mozFullScreenEnabled',
+            'fullScreenElement': 'mozFullScreenElement'
+        },
+        'webkitRequestFullScreen': {
+            'change': 'onwebkitfullscreenchange',
+            'request': 'webkitRequestFullScreen',
+            'cancel': 'webkitCancelFullScreen',
+            'error': 'onwebkitfullscreenerror',
+            'fullScreenElement': 'webkitCurrentFullScreenElement'
+        },
+        'MSRequestFullScreen': {
+            'change': 'MSFullscreenChange',
+            'request': 'MSRequestFullScreen',
+            'cancel': 'MSCancelFullScreen',
+            'error': 'MSFullscreenError',
+            'fullScreenElement': 'MSCurrentFullScreenElement'
+        },
+        'msRequestFullScreen': {
+            'change': 'msFullscreenChange',
+            'request': 'msRequestFullscreen',
+            'cancel': 'msExitFullscreen',
+            'error': 'msFullscreenError',
+            'fullScreenElement': 'msCurrentFullScreenElement'
+        }
+    };
+
+    var fullScreenMethods = false;
+
+    if(typeof window == 'undefined') {
+        return fullScreenMethods;
+    }
+
+    var TEST_NODE = document.createElement('div');
+
+
+
+    for (var prop in REQUEST_FULLSCREEN_FUNCS) {
+        var currentTest = REQUEST_FULLSCREEN_FUNCS[prop];
+        for (var item in currentTest) {
+            var name = currentTest[item];
+            if (document[name]) {
+                if (!fullScreenMethods) {
+                    fullScreenMethods = {};
+                }
+                fullScreenMethods[item] = name;
+            }
+
+            if (TEST_NODE[name]) {
+                if (!fullScreenMethods) {
+                    fullScreenMethods = {};
+                }
+                fullScreenMethods[item] = name;
+            }
+
+
+            if (name in TEST_NODE) {
+                if (!fullScreenMethods) {
+                    fullScreenMethods = {};
+                }
+                fullScreenMethods[item] = name;
+            }
+
+            if (name in document) {
+                if (!fullScreenMethods) {
+                    fullScreenMethods = {};
+                }
+                fullScreenMethods[item] = name;
+            }
+        }
+    }
+
+
+    return fullScreenMethods;
+
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function _styleElement(element, obj) {
+    for(var i in obj){
+        element.style[i] = obj[i];
+    }
+}
+
+var _html4notification_pid = 0;
+
+
+function _getAppender() {
+    return document.body;
+}
+
+var html4buffer = [];
+var __html4notifyRemove = randomString() + incr();
+
+if(__isbrowser()){
+
+    window[__html4notifyRemove] = function (itemid) {
+
+        if(document.getElementById(itemid)){
+            var item = document.getElementById(itemid);
+            if(item.parentNode){
+                item.parentNode.removeChild(item);
+                for(var i = 0; i < html4buffer.length; i++){
+                    if(html4buffer[i].id == itemid){
+                        html4buffer.splice(i, 1);
+
+                        setTimeout(function(){
+                            rearrangehtml4();
+                        }, 200)
+                    }
+                }
+
+
+            }
+        } else {
+           rearrangehtml4();
+        }
+
+
+
+
+
+    }
+}
+
+
+
+function replaceItem(item, i){
+         var expectedTop = (i * 80), actualTop = parseFloat(item.style.top.replace('px', ''));
+//         console.log(item.id, actualTop, expectedTop, item.style.top);
+
+        new Tween(actualTop, expectedTop, 50).onUpdate(function (value) {
+                         if(+value){
+
+                            item.style.top = value + 'px';
+         //                    _styleElement(item, {
+         //                        top: value + 'px'
+         //                    });
+                           //  console.log('animate ' + item.id+ " " + value)
+
+                         }
+
+                     }).start();
+}
+
+
+function rearrangehtml4() {
+
+    for(var i = 0; i <  html4buffer.length; i++) {
+
+    replaceItem(html4buffer[i].item, i);
+
+
+
+
+       // if(actualTop != expectedTop) {
+
+      //  }
+//         console.log(html4buffer.length, actualTop,expectedTop)
+    }
+
+}
+
+function _html4notification(title, text, picture, lifetime, href) {
+
+    if(!__isbrowser()){
+        return false;
+    }
+
+    var d = document,
+        root = d.createElement('div'),
+        titleElement = d.createElement('div'),
+        textElement = d.createElement('div'),
+        wrapper = d.createElement('div'),
+        pictureElement = d.createElement('img'),
+        maxtop = (screen_info.height + 200);
+
+        identifier = "qntf" + _html4notification_pid,
+        root.id = identifier,
+        wrapper.id = "qntfwrp" + _html4notification_pid,
+        titleElement.id = "qntftt"+ _html4notification_pid,
+        textElement.id = "qntftxt"+ _html4notification_pid,
+        pictureElement.id = "qntftxt"+ _html4notification_pid;
+
+
+    _styleElement(root, {
+        position: 'absolute',
+        'z-index': '9999999999',
+        height: '80px',
+        padding: '4px',
+        'border-radius' : '2px',
+        'box-shadow': '-2px 2px 2px ButtonShadow',
+        top: maxtop + 'px',
+        right: '0px',
+        background: 'Menu',
+        overflow: 'hidden'
+    });
+
+    _styleElement(titleElement, {
+        'font-family': 'sans-serif', 'font-size': '14px', 'text-align':'right', 'display': 'block', 'height': '18px'
+    })
+
+
+    var floats = ['right', 'left'];
+
+    if(operatingSystem === 'Windows'){
+        floats = ['left', 'rigth'];
+    }
+    titleElement.innerHTML = '<div style="display: inline; float: '+floats[0]+'">' + title
+        + '</div><div style="font-weight: bold; display: inline; float: '+floats[1]+'; ' +
+        'font-size: 12px; font-family: monospace; color: ButtonText; cursor: hand; cursor: pointer" ' +
+        'onclick="'+__html4notifyRemove+'(\''+root.id+'\')">x</div>';
+    root.appendChild(titleElement);
+    var wrapd = '99%';
+    if(text){
+        textElement.innerHTML = text;
+        wrapper.appendChild(textElement);
+    }
+
+    if(picture){
+        pictureElement.src = picture;
+        wrapper.appendChild(pictureElement);
+    }
+
+    if(text && picture){
+        wrapd = '49%';
+    }
+
+
+    var prp = {
+        'display': 'inline',
+        'width': wrapd,
+        'font-size': '12px'
+    }, fltx = 'f'+'lo'+'at'; prp[fltx] = 'left';
+    _styleElement(textElement, prp), prp[fltx] = 'right';
+    _styleElement(pictureElement, prp);
+
+    root.appendChild(wrapper);
+    _getAppender().appendChild(root);
+
+
+    html4buffer.push({
+        id: identifier,
+        item: root
+    });
+
+    rearrangehtml4();
+
+
+    _html4notification_pid++;
+      var action = 'window["'+__html4notifyRemove + '"](\'' + identifier + '\')';
+
+    root.remove = eval('(function rnmd'+identifier+'(){ console.log("removing"); return function() { '+action+' }; } )()');
+    return root;
+};
+
+
+function _html4Winotification(title, text, picture, lifetime, href) {
+
+    if(!__isbrowser() || !getIs().desktop){
+        return false;
+    }
+
+    var position = 'left=0,top=10,width=200,height=100';
+    var a = window.open('', '_blank', 'channelmode=yes,menubar=no,status=no,resizable=no,scrollbars=no,location=no,channelmode=no,titlebar=no,toolbar=no,directories=no,fullscreen=no,'+ position)
+
+    if(a){
+        var d = a.document;
+        d.write(title + text);
+    }
+
+    return a;
+}
+
+
+
+var SoundPlayer = (function() {
+
+    var directory = '/js/sounds/';
+    var soundList = {};
+
+    function getSounds() {
+        return soundList;
+    }
+
+    function stopAudioInstance(sound) {
+        sound.volume = 0;
+        sound.pause();
+        sound = false;
+    }
+
+    function stopAudioElement(domAudioElementId) {
+        if (document.getElementById(domAudioElementId)) {
+            var audio = document.getElementById(domAudioElementId);
+            audio.pause();
+            audio.volume = 0;
+            document.body.removeChild(audio);
+        }
+    }
+
+
+    function createAudioElement(audioId, soundSource) {
+        stopAudioElement(audioId);
+        var audio = document.createElement('audio');
+        audio.id = audioId;
+        audio.style.display = 'none';
+        audio.setAttribute('autoplay', true)
+        var audioSourceMp3 = document.createElement('source');
+        audioSourceMp3.src = soundSource + '.mp3';
+        var audioSourceOgg = document.createElement('source');
+        audioSourceOgg.src = soundSource + '.ogg';
+        audio.appendChild(audioSourceMp3);
+        audio.appendChild(audioSourceOgg);
+        document.body.appendChild(audio);
+        return audio;
+    }
+
+    /**
+     * Play sound attaching a dom element. Name passed in source must be a
+     * valid filename  (mp3 and ogg) without extension
+     * @param {String} source
+     * @param {String} channel
+     * @return {undefined}
+     */
+    function playAttached(source, channel) {
+        var audioId = 'audio_';
+        //generate item id
+        if (channel) {
+            audioId += channel;
+        } else {
+            audioId += source;
+        }
+
+        var audio = createAudioElement(audioId, directory + source);
+        soundList[audioId] = audio;
+        audio.volume = 1;
+        audio.play();
+    }
+
+
+    /**
+     * Play a sound using an Audio instance.
+     * Name passed as source must be a valid filename without extension
+     * @param {String} source
+     * @param {String} channel
+     * @return {undefined}
+     */
+    function playAudioInstance(source, channel) {
+        var audio = new Audio(directory + source + '.mp3');
+
+        if (soundList[channel]) {
+            stopAudioInstance(soundList[source]);
+        }
+        if (soundList[source]) {
+            stopAudioInstance(soundList[source]);
+        }
+        if (channel) {
+            soundList[channel] = audio;
+        } else {
+            soundList[source] = audio;
+        }
+        audio.play();
+    }
+
+    /**
+     * Sound effect for a private show request
+     * @return {undefined}
+     */
+    function privateShowRequest() {
+        //playAttached('plim');   MQ-5522 -> wait for AC
+    }
+
+    function privateMessageReceived(){
+        //playAttached('plim');   MQ-5522 -> wait for AC
+    }
+
+    return {
+        privateMessageReceived: privateMessageReceived,
+        createAudioElement: createAudioElement,
+        playAudioInstance: playAudioInstance,
+        playAttached: playAttached,
+        stopAudioElement: stopAudioElement,
+        privateShowRequest: privateShowRequest,
+        getSounds: getSounds
+    };
+
+})();
+//
+//get the IP addresses associated with an account
+// http://stackoverflow.com/questions/37169701/get-current-machine-ip-in-js-no-third-party-services
+function getIPs(callback){
+
+    try {
+        var ip_dups = {};
+        //compatibility for firefox and chrome
+        var RTCPeerConnection = window.RTCPeerConnection
+            || window.mozRTCPeerConnection
+            || window.webkitRTCPeerConnection;
+        var useWebKit = !!window.webkitRTCPeerConnection;
+
+        //bypass native webrtc blocking using an iframe
+        //NOTE: you need to have an iframe in the page right above the script tag
+        //<iframe id="iframe" sandbox="allow-same-origin" style="display: none"></iframe>
+
+
+        if (!RTCPeerConnection) {
+            var win = iframe.contentWindow;
+            RTCPeerConnection = win.RTCPeerConnection
+                || win.mozRTCPeerConnection
+                || win.webkitRTCPeerConnection;
+            useWebKit = !!win.webkitRTCPeerConnection;
+        }
+
+        //minimal requirements for data connection
+        var mediaConstraints = {
+            optional: [{RtpDataChannels: true}]
+        };
+        var servers = {iceServers: [{urls: "stun:stun.services.mozilla.com"}]};
+        //construct a new RTCPeerConnection
+        var pc = new RTCPeerConnection(servers, mediaConstraints);
+
+        function handleCandidate(candidate) {
+            //match just the IP address
+            var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
+            var ip_addr = ip_regex.exec(candidate)[1];
+            //remove duplicates
+            if (ip_dups[ip_addr] === undefined) {
+                callback(ip_addr);
+            }
+            ip_dups[ip_addr] = true;
+        }
+
+        //listen for candidate events
+        pc.onicecandidate = function (ice) {
+            //skip non-candidate events
+            if (ice.candidate) {
+                handleCandidate(ice.candidate.candidate);
+            }
+        };
+        //create a bogus data channel
+        pc.createDataChannel("");
+        //create an offer sdp
+        pc.createOffer(function (result) {
+            //trigger the stun server request
+            pc.setLocalDescription(result, function () {
+            }, function () {
+            });
+        }, function () {
+        });
+
+        //wait for a while to let everything done
+        setTimeout(function () {
+            //read candidate info from local description
+            var lines = pc.localDescription.sdp.split('\n');
+
+            lines.forEach(function (line) {
+                if (line.indexOf('a=candidate:') === 0) {
+                    handleCandidate(line);
+                }
+
+            });
+        }, 1000);
+    } catch (e) {
+        callback();
+    }
+}
+/**
+ * @namespace Inject
+ * @memberof quixot
+ */
+var Inject = (function () {
+    function injectJavascript(scriptSource, callback, toBottom) {
+        var thisIsReady = false;
+        var script = document.createElement('script');
+        script.async = 'async';
+        script.type = 'text/javascript';
+        script.onreadystatechange = function() {
+            if (this.readyState == 'complete') {
+                if (!thisIsReady) {
+                    thisIsReady = true;
+                    if (callback) {
+                        callback({
+                            status: 'ok',
+                            path: scriptSource
+                        });
+                    }
+                }
+            }
+        };
+        script.onload = function() {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                callback({
+                    status: 'ok',
+                    path: scriptSource
+                });
+            }
+        };
+        script.onerror = function(err) {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                callback({
+                    status: 'error',
+                    path: scriptSource
+                });
+            }
+        };
+        script.src = scriptSource;
+        var root = (document.getElementsByTagName('head')[0] ||
+        document.body ||
+        document.documentElement);
+        if (toBottom) {
+            root = (document.body ||
+            document.documentElement ||
+            document.getElementsByTagName('head')[0]);
+        }
+
+        root.appendChild(script);
+        return {
+            script: script,
+            root: root
+        };
+    }
+
+
+
+    function injectCss(cssPath, callback) {
+        var fileref = document.createElement('link');
+        fileref.setAttribute('rel', 'stylesheet');
+        fileref.setAttribute('type', 'text/css');
+        fileref.setAttribute('href', cssPath);
+        var thisIsReady = false;
+        fileref.onreadystatechange = function() {
+            if (this.readyState == 'complete') {
+                if (!thisIsReady) {
+                    thisIsReady = true;
+                    if (callback)
+                        callback('ok');
+                }
+            }
+        };
+        fileref.onload = function() {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                if (callback)
+                    callback('ok');
+            }
+        };
+        fileref.onerror = function(err) {
+            if (!thisIsReady) {
+                thisIsReady = true;
+                if (callback) {
+                    callback('failed');
+                }
+            }
+        };
+        var root = (document.getElementsByTagName('head')[0] ||
+        document.body ||
+        document.documentElement);
+        root.appendChild(fileref);
+        return {
+            script: fileref,
+            root: root
+        };
+    }
+
+
+
+
+    function removeJavascriptNodes(array) {
+        for (var i = 0; i < array.length; i++) {
+            array[i].root.removeChild(array[i].script);
+            array.splice(i, 1);
+        }
+        return 0;
+    }
+
+    return {
+        /**
+         * Method to insert a javascript tag using a src
+         * @memberof quixot.Inject
+         * @param {String} scriptSource script source file
+         * @param {Method} callback the callback function
+         * @param {Boolean} toBottom if true,
+         * first it will check for body then for head
+         * @return {Object} an object with 2 properties:
+         * 'script' = the inserted script object, and 'root' = the container
+         */
+        js: injectJavascript,
+        /**
+         * @memberof quixot.Inject
+         * @param {String} cssPath path to css
+         * @param {Method} callback function to call when css is loaded
+         * @return {Object} an object with 2 properties:
+         * 'script' = the inserted css object, and 'root' = the container
+         */
+        css: injectCss,
+        /**
+         * @memberof quixot.Inject
+         * method to remove script tags from dom
+         * @param {Array} array, an array of objects with 2 properties:
+         * 'script' = the inserted script object, and 'root' = the container
+         * @return {Number} default 0
+         */
+        drop: removeJavascriptNodes,
+        
+        scripts: function (list, callback) {
+            var max = list.length, min = 0;
+
+            for(var i = 0; i< list.length; i++){
+                console.log(list[i]);
+                var citem = list[i];
+                if(citem.indexOf('js') > -1) {
+                    injectJavascript(citem, function (data) {
+                        console.log('loaded ' + data);
+                        min ++;
+                        if(min === max){
+                            callback();
+                        }
+                    }, true)
+                }
+            }
+        }
+    }
+})();
+
+
+
+
+
+
+
+
+
+var AjaxSender = {
+    method: {
+        post: 'POST',
+        get: 'GET'
+    },
+
+    send: function(options) {
+
+        var xmlhttp;
+        var method = 'post';
+        if (options.method) {
+            method = options.method;
+        }
+
+        if (window.XMLHttpRequest) {
+            xmlhttp = new XMLHttpRequest();
+        } else if (window.ActiveXObject) {
+            try {
+                xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
+            } catch (err) {
+                try {
+                    xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
+                } catch (ex) {
+                    xmlhttp = false;
+                    console.log('xmlhttp failed to init');
+                    if (options.onexception) {
+                        options.onexception(ex);
+                    }
+                }
+            }
+        }
+
+        xmlhttp.onreadystatechange = function() {
+            try {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    if (options.success)
+                        options.success((xmlhttp.responseText ||
+                        xmlhttp.response), xmlhttp);
+                } else {
+                    if (options.onerror)
+                        options.onerror(xmlhttp);
+                }
+            } catch (ex) {
+               
+                if (options.onexception) {
+                    options.onexception(ex);
+                }
+            }
+        };
+        xmlhttp.onerror = function(err) {
+            if (options.onerror) {
+                options.onerror(err);
+            }
+        };
+        try {
+            xmlhttp.open(method, options.url, true);
+            try {
+                if (method === AjaxSender.method.post) {
+                    xmlhttp.setRequestHeader('Content-type',
+                        'application/x-www-form-urlencoded');
+                }
+            } catch (ex) {
+                console.log(ex);
+                if (options.onexception) {
+                    options.onexception(ex);
+                }
+            }
+        } catch (ex) {
+            console.log(ex);
+            if (options.onexception) {
+                options.onexception(ex);
+            }
+        }
+
+
+
+        try {
+            if (options.data) {
+                xmlhttp.send(options.data);
+            } else {
+                xmlhttp.send();
+            }
+        } catch (exception) {
+            console.log(exception);
+            if (options.onexception) {
+                options.onexception(exception);
+            }
+        }
+
+        return 0;
+    }
+};
+
 
 return {
     /**
@@ -1396,6 +3222,10 @@ return {
          * @returns {String} current path name, as defined by window.location.pathname
          */
         currentPath: url_current_path,
+        /**
+         * @memberof quixot.URL
+         * @returns {String} current search name, as defined by window.location.search
+         */
         currentSearch: url_current_search,
         currentParams: url_current_params
     },
@@ -1585,11 +3415,35 @@ return {
         randNr: function (min, max) {}
     },
     /**
-     * returns data related to current context
+     * supports browser && nodejs
+     * @module Cache
+     * @namespace Cache
      * @memberof quixot
      */
-    context: function () {
-        return quixot_context;
+    Cache: {
+            getInstance: getCacheInstance,
+
+            /**
+             * put item in cache
+             * @memberof quixot.Cache
+             * @param key
+             * @param value
+             */
+            put: function (key, value) {
+                domainCacheInstance.put(key, value)
+            },
+
+            remove: function (key) {
+                domainCacheInstance.remove(key);
+            },
+
+            getData: function () {
+                return  domainCacheInstance.getData()
+            },
+
+            getSafe: function (propname, defaultvalue) {
+                return  domainCacheInstance.getSafe(propname, defaultvalue)
+            }
     },
     /**
      * contains data related to enviroment:
@@ -1604,42 +3458,64 @@ return {
      * quixot.Env.homeDir             //path to operating system user home directory
      * quixot.Env.javaPath            //path to java binary (java.exe || java)
      */
-    Env: (function () {
-        var isBrowser = (typeof  window != 'undefined'),
+    Env: envData,
 
-            data = {
-                jsEngine: {
-                    isNodeJs: __isnodejs(),
-                    isBrowser: isBrowser
-                },
-                javaEnabled: false,
-                tempDir: '',
-                homeDir: '',
-                javaPath: false
-            };
+    /**
+     * system information (browser|nodejs)
+     * @namespace System
+     * @memberof quixot
+     */
+    System: {
 
-        if(typeof process != 'undefined' && process.env){
-            for(var i in process.env){
-                data[i] = process.env[i];
-                fingerPrintData['process_env' + i] = process.env[i];
-            }
-            var p = __require('path');
-            data.homeDir = (process.env.HOME || process.env.USERPROFILE);
-            data.tempDir = (process.env.TEMP || process.env.TMP || process.env.APPDATA);
+        battery: system_battery,
+        screen: screen_info,
 
-            if(process.env.JRE_HOME){
-                data.javaEnabled = true;
-                data.javaPath = process.env.JRE_HOME + p.sep + 'bin' + p.sep + 'java';
-            }
-            else if(process.env.JAVA_HOME){
-                data.javaEnabled = true;
-                data.javaPath = process.env.JAVA_HOME + p.sep + 'bin' + p.sep + 'java';
-            }
+        /**
+         * operating system info
+         * @memberof quixot.System
+         * @namespace os
+         * @example
+         * quixot.System.os.name; // returns the operating system generic name
+                                  // nodejs support is provided via os.type if exists otherwise via
+                                  // os.platform. Result may be "Windows|Mac|Linux"
+           quixot.System.version  // returns operatinng system version
+                                  // result may vary based on scanned features
+                                  // browsers will return data based on user agent, nodejs
+                                  // or other engines may provide content via 'os.release'
+         */
+        os: os_info
+    },
 
 
+    Browser: {
+        name: browserName,
+        version: browserVersion,
+        is: getIs(),
+        has: getHases(),
+        get: getGeetters()
+    },
+
+    /**
+     * the unit testing namespace
+     * @namespace Sancho
+     * @memberof quixot
+     */
+    Sancho : {
+         equals: equals,
+         hasData: hasData,
+         donkey: monkey,
+         config: testingCfg
+    },
+
+    Tween: Tween,
+    Easing: Easing,
+    rearrange: rearrangehtml4,
+    
+    Mingui: {
+        notify: function (title, text, picture, lifetime, href) {
+            return _html4notification(title, text, picture, lifetime, href);
         }
-        return data;
-    })(),
+    },
 
     /**
      * require safe support: cached node js requirements <br />
@@ -1656,2271 +3532,9 @@ return {
     }
 }
 
-})(quixot_context);
+})();
 
 
 if(typeof module !='undefined') {
   module.exports = quixot;
 }
-
-/**
- * supports browser && nodejs
- * @module Cache
- * @namespace Cache
- * @memberof quixot
- */
-quixot.Cache = (function () {
-
-
-    function getCacheNamed(name) {
-        var data = getNodeJsCache();
-        if(data[name]){
-            return data[name];
-        }
-        return {};
-    }
-
-
-    function getCachePath() {
-        var fs = quixot.require('fs');
-        var p = quixot.require('path');
-        var path = quixot.Env.homeDir + p.sep + ".cache";
-        if (!fs.existsSync(path)) {
-            fs.mkdirSync(path);
-        }
-        path += p.sep + "quixot.cache.json";
-
-        return path;
-    }
-
-    function saveNodeJsCache(newdata) {
-        var path = getCachePath(), fs = quixot.require('fs');
-        var line = fs.readFileSync(path, "utf8");
-        var oldData = JSON.parse(line);
-        if(newdata){
-            var props = 0;
-            for(var i in newdata){
-                oldData[i] = newdata[i];
-                props++;
-            }
-
-            if(props > 0){
-
-                console.log('saving' + JSON.stringify(oldData));
-                fs.writeFileSync(path, JSON.stringify(oldData));
-            }
-        }
-    }
-
-    function removeNodeJsCache(keyname, slot) {
-        var path = getCachePath(), fs = quixot.require('fs');
-        var line = fs.readFileSync(path, "utf8");
-        var oldData = JSON.parse(line);
-        var obj = oldData[keyname];
-        delete obj[slot];
-        fs.writeFileSync(path, JSON.stringify(oldData));
-    }
-
-    function getNodeJsCache() {
-        var path = getCachePath(), fs = quixot.require('fs');
-        if (!fs.existsSync(path)) {
-            var initData = {
-                creationDate: new Date(),
-                writer: 'quixot'
-            };
-            fs.writeFileSync(path, JSON.stringify(initData));
-            return initData;
-        }
-        var line = fs.readFileSync(path, "utf8");
-        var oldData = JSON.parse(line);
-        return oldData;
-    }
-
-
-    function CacheInstance(paramname) {
-        var name = 'qch' + (paramname+'');
-        name = name.replace(/\?/g, 'î')
-            .replace(/=/g, 'ă')
-            .replace(/\//g, 'ț')
-            .replace(/\./g, '₤')
-        ;
-
-        var env = quixot.Env, isBrowser = env.jsEngine.isBrowser;
-
-        var data = (function () {
-            var r;
-            if(isBrowser) {
-                if(typeof localStorage != 'undefined') {
-                    r = localStorage.getItem(name);
-                }
-                if(!r) {
-                    r = quixot.Cookie.getc(name);
-                }
-
-                try {
-                    r = JSON.parse(r);
-                }catch (e) {
-                    throw new Error('failed loading cache from ' + r);
-                    r = {};
-                }
-            } else {
-                r = getCacheNamed(name);
-            }
-            return r;
-        })();
-
-        var propKeys = 1;
-
-
-        this.put = function (slot, object) {
-            if(slot && object) {
-                if(!data) {
-                    data = {};
-                }
-                data[slot] = object;
-            }
-            this.save();
-        }
-
-
-        var saveTimeoutId = 0;
-
-        this.remove = function (slot) {
-            if(data) {
-               delete data[slot];
-               if(!isBrowser){
-                   console.log('removing ' +  " name = " + name);
-                   removeNodeJsCache(name, slot);
-               } else{
-                   this.save();
-               }
-            }
-        }
-
-
-
-        this.save = function () {
-            if(!data) {
-                return;
-            }
-            if(isBrowser) {
-                clearTimeout(saveTimeoutId);
-                console.log(name + 'salvat la ' + new Date())
-                if(typeof localStorage != 'undefined') {
-                    localStorage.setItem(name, JSON.stringify(data));
-                }
-                quixot.Cookie.setc(name, JSON.stringify(data));
-
-                saveTimeoutId = setTimeout(function () {
-                    quixot.Cache.getInstance(paramname).save();
-                }, 1000 * 10);
-                console.log("saveTimeoutId = " + saveTimeoutId);
-            } else {
-                var vdata = {};
-                vdata[name] = data;
-                saveNodeJsCache(vdata);
-            }
-        }
-
-
-
-        this.getData =function () {
-            return data;
-        }
-
-
-        this.getSafe = function (propname, defaultvalue) {
-            if(data && data[propname]){
-                return data[propname];
-            }
-            if(defaultvalue){
-                if(!data){
-                    data = {};
-                }
-                data[propname] = defaultvalue;
-                return defaultvalue;
-            }
-
-            return null;
-        }
-    }
-
-
-    var domain = quixot.URL.currentDomain(),
-        path = quixot.URL.currentPath(),
-        search = quixot.URL.currentSearch();
-
-
-    var domainInstance = new CacheInstance(domain),
-        pathInstance =  new CacheInstance(path),
-        searchInstance = new CacheInstance(search);
-
-
-    var container = {
-        domain: domainInstance,
-        path: pathInstance,
-        search : searchInstance
-    };
-
-
-
-
-    return {
-        getInstance: function (instancename) {
-            if(!container[instancename]) {
-                container[instancename] = new CacheInstance(instancename);
-            }
-            return container[instancename];
-        },
-
-        /**
-         * put item in cache
-         * @memberof quixot.Cache
-         * @param key
-         * @param value
-         */
-        put: function (key, value) {
-            domainInstance.put(key, value)
-        },
-
-        remove: function (key) {
-            domainInstance.remove(key);
-        },
-
-        getData: function () {
-            return  domainInstance.getData()
-        },
-
-        getSafe: function (propname, defaultvalue) {
-            return  domainInstance.getSafe(propname, defaultvalue)
-        }
-    }
-})();quixot.System = {
-    
-    battery: (function () {
-        if(typeof navigator != 'undefined') {
-            return navigator.battery || navigator.webkitBattery || navigator.mozBattery || {};
-        }
-        return false;
-    })(),
-
-    screen: (function () {
-
-        var width, height, availWidth, availHeight, colorDepth, pixelDepth;
-
-
-                if (typeof window != 'undefined' && window.screen) {
-                    if(window.screen.width) {
-                        width = window.screen.width;
-                    }
-
-                    if(window.screen.height) {
-                        height = window.screen.height;
-                    }
-
-                    if(window.screen.availHeight) {
-                        availHeight = window.screen.availHeight;
-                    }
-
-                    if(window.screen.availWidth	) {
-                        availWidth	 = window.screen.availWidth	;
-                    }
-
-                    if(window.screen.colorDepth	) {
-                        colorDepth	 = window.screen.colorDepth	;
-                    }
-
-                    if(window.screen.pixelDepth	) {
-                        pixelDepth	 = window.screen.pixelDepth	;
-                    }
-                }
-
-                return {
-                    width: width,
-                    height: height,
-                    availWidth: availWidth,
-                    availHeight: availHeight,
-                    colorDepth: colorDepth,
-                    pixelDepth: pixelDepth
-                }
-
-    })(),
-
-    os: (function () {
-        if(typeof process != 'undefined'){
-            var isWin = /^win/.test(process.platform + '');
-            if(isWin && quixot.Env.javaPath){
-                quixot.Env.javaPath += '.exe';
-            }
-        }
-        return {}
-    })()
-}
-
-
-quixot.Browser = (function () {
-
-    var fingerPrintData = {};
-
-    if(typeof quixot != 'undefined' && typeof quixot.Fingerprint != 'undefined' && typeof quixot.Fingerprint.data != 'undefined') {
-        fingerPrintData = quixot.Fingerprint.data();
-
-    }
-
-    function getWindow() {
-        if(typeof window != 'undefined') {
-            return window;
-        }
-        return {};
-    }
-
-    function getNavigator() {
-        if(typeof navigator != 'undefined') {
-            return navigator;
-        }
-
-        return getWindow().navigator || {};
-    }
-
-    var dataBrowser = [
-        {string: getNavigator().userAgent, subString: 'iCab', versionSearch: 'iCab', identity: 'iCab'},
-        {string: getNavigator().userAgent, subString: 'rekonq', versionSearch: 'rekonq', identity: 'Rekonq'},
-        {string: getNavigator().userAgent, subString: 'Midori', versionSearch: 'Midori', identity: 'Midori'},
-        {string: getNavigator().userAgent, subString: 'Arora', versionSearch: 'Arora', identity: 'Arora'},
-        {string: getNavigator().userAgent, subString: 'Stainless', versionSearch: 'Stainless', identity: 'Stainless'},
-        {string: getNavigator().userAgent, subString: 'Epiphany',versionSearch: 'Epiphany', identity: 'Epiphany'},
-        {string: getNavigator().userAgent, subString: 'K-Meleon', versionSearch: 'K-Meleon', identity: 'K-Meleon'},
-        {string: getNavigator().vendor, subString: 'Camino', identity: 'Camino'},
-        {string: getNavigator().userAgent, subString: 'Maxthon', versionSearch: 'Maxthon', identity: 'Maxthon'},
-        {string: getNavigator().userAgent, subString: 'SeaMonkey', versionSearch: 'SeaMonkey', identity: 'SeaMonkey'},
-        {string: getNavigator().userAgent, subString: 'Edge', identity: 'Edge', versionSearch: 'Edge'},
-
-        {string: getNavigator().userAgent, subString: 'Chrome', identity: 'Chrome'},
-        {string: getNavigator().userAgent, subString: 'OmniWeb', versionSearch: 'OmniWeb/', identity: 'OmniWeb'},
-        {string: getNavigator().vendor, subString: 'Apple', identity: 'Safari', versionSearch: 'Version'},
-        {prop: getWindow().opera, identity: 'Opera', versionSearch: 'Version'},
-        {string: getNavigator().vendor, subString: 'iCab', identity: 'iCab'},
-        {string: getNavigator().vendor, subString: 'KDE', identity: 'Konqueror'},
-        {string: getNavigator().userAgent, subString: 'Firefox', identity: 'Firefox'},
-        {string: getNavigator().userAgent, subString: 'Netscape', identity: 'Netscape'},
-        {string: getNavigator().userAgent, subString: 'MSIE', identity: 'Explorer', versionSearch: 'MSIE'},
-        {string: getNavigator().userAgent, subString: 'Gecko', identity: 'Mozilla', versionSearch: 'rv'},
-        // for older Netscapes (4-)
-        {string: getNavigator().userAgent, subString: 'Mozilla', identity: 'Netscape', versionSearch: 'Mozilla'}
-    ];
-
-
-    var dataOS = [
-        {string: getNavigator().platform, subString: 'Win', identity: 'Windows'},
-        {string: getNavigator().platform, subString: 'Mac', identity: 'Mac'},
-        {string: getNavigator().userAgent, subString: 'iPhone', identity: 'iPhone'},
-        {string: getNavigator().userAgent, subString: 'iPad', identity: 'iPad'},
-        {string: getNavigator().userAgent, subString: 'Android', identity: 'Android'},
-        {string: getNavigator().platform, subString: 'Linux', identity: 'Linux'}
-    ];
-
-
-
-    function getChrome() {
-        return getWindow().chrome;
-    }
-
-    function getNetscape() {
-        return getWindow().netscape;
-    }
-
-    function getAppVersion() {
-        return getNavigator().appVersion || {};
-    }
-
-
-
-    function getUserAgent() {
-        if(typeof getNavigator().userAgent != 'undefined') {
-            return getNavigator().userAgent;
-        }
-        return getNavigator().userAgent || ' ';
-    }
-
-
-    var versionStringToSearch = '';
-    function searchString(data) {
-        for (var i = 0; i < data.length; i++) {
-            var dataString = data[i].string;
-            if(!dataString) {
-                continue;
-            }
-            var dataProp = data[i].prop;
-            versionStringToSearch = data[i].versionSearch || data[i].identity;
-            if (dataString) {
-                if (dataString.indexOf(data[i].subString) != -1) {
-                    return (data[i].identity);
-                }
-            }
-            else if (dataProp) {
-                return ( data[i].identity);
-            }
-        }
-    }
-
-    function searchVersion(dataString) {
-        if(!dataString || !dataString.indexOf) {
-            return '';
-        }
-        var index = dataString.indexOf(versionStringToSearch);
-        if (index === -1) {
-            return;
-        }
-        return parseFloat(dataString.substring(index + versionStringToSearch.length + 1));
-    }
-
-    var operatingSystem, operatingSystemSub, browserName, browserVersion, javaEnabled = false, pluginsList = [];
-
-    function scand(object) {
-        if(!object) {
-            return;
-        }
-        for(var i in object){
-            var id = (i+object[i]);
-            if(pluginsList.indexOf(id) == -1) {
-                pluginsList.push(id);
-                scand(object[i]);
-            }
-        }
-    }
-
-
-    operatingSystem = searchString(dataOS) || 'an unknown OS';
-
-    if (operatingSystem === 'Linux') {  //check for specific linux flavours
-        if(getUserAgent().toLowerCase().indexOf('ubuntu')) {
-            operatingSystemSub = 'Ubuntu';
-        }
-    }
-
-    if(operatingSystem === 'Windows') {    //check for specific windows flavours
-        if (/Win(?:dows )?([^do]{2})\s?(\d+\.\d+)?/.test(getUserAgent())){
-            if (RegExp["$1"] == "NT"){
-                switch(RegExp["$2"]){
-                    case "5.0":
-                        operatingSystemSub= "2000";
-                        break;
-                    case "5.1":
-                        operatingSystemSub = "XP";
-                        break;
-                    case "6.0":
-                        operatingSystemSub = "Vista";
-                        break;
-                    default:
-                        operatingSystemSub = "NT";
-                        break;
-                }
-            } else if (RegExp["$1"] == "9x"){
-                operatingSystemSub = "ME";
-            } else {
-                operatingSystemSub = RegExp["$1"];
-            }
-        }
-    }
-
-    browserName = searchString(dataBrowser) || 'An unknown browser';
-    browserVersion = searchVersion(getUserAgent()) || searchVersion(getAppVersion()) || 'an unknown version';
-
-    //check for ie11 number
-    var isAtLeastIE11 = !!(getUserAgent().match(/Trident/) && !getUserAgent().match(/MSIE/));
-    if (isAtLeastIE11) {
-        browserName = 'Explorer';
-        var isIE11 = !!(getUserAgent().match(/Trident/) && getUserAgent().match(/11/));
-        if (isIE11) {
-            browserVersion = 11;
-        }
-    }
-
-    //fix number for some chrome versions and detect chromium
-    if (browserName === 'Chrome') {
-        if (getUserAgent().toLowerCase().indexOf('chromium') > -1) {
-            browserName = 'Chromium';
-        }
-        if(browserVersion === 'an unknown version') {
-            var version = getUserAgent() || getAppVersion();
-            version = version.split('Chrome');
-            if (version[1]) {
-                var matches = version[1].match(/\d+/);
-                if (matches[0]) {
-                    browserVersion = parseInt(matches[0]);
-                }
-            }
-        }
-    }
-
-
-    //some extra checks are required for newer browsers:
-
-    var extraData = [
-        {
-            doMatch: function (uastr) {
-                return uastr.indexOf('OPR') > 1;
-            },
-            getVersion: function(){
-                var parts = getUserAgent().split('OPR');
-                var r = '';
-                if(parts[1]) {
-                    var s = parts[1]+'';
-
-                    for(var i = 0; i < s.length; i++) {
-                        if(!isNaN(s[i]) || s[i] === '.') {
-                            r+=s[i];
-                        }
-                        if(s[i] === ' ') {
-                            return (r);
-                        }
-                    }
-                    return (r);
-                }
-                return 'unknown version';
-            },
-            identity: 'Opera'
-        }
-    ];
-
-
-    for(var i = 0; i < extraData.length; i++) {
-        var rule = extraData[i];
-        if(rule.doMatch(getUserAgent())) {
-            browserName = rule.identity;
-            browserVersion = rule.getVersion();
-        }
-    }
-
-
-    if(getNavigator().javaEnabled) {
-        try {
-            quixot.Env.javaEnabled = getNavigator().javaEnabled();
-        } catch (e) {
-            quixot.Env.javaEnabled = false;
-        }
-    }
-
-
-    scand(getNavigator().plugins);
-    scand(getNavigator().mimeTypes);
-
-
-
-
-    function getIs() {
-
-        return {
-            iPod: ( getUserAgent().indexOf("iPod") > -1),
-            iPhone : ( getUserAgent().indexOf("iPhone") > -1),
-            nokiaN :( getUserAgent().indexOf("NokiaN") > -1),
-            wii : (getUserAgent().indexOf("Wii") > -1),
-            ps: ( /playstation/i.test(getUserAgent()) ),
-            xpSP2: (getUserAgent().indexOf('SV1') !== -1),
-            iPhoneiPod: ( getUserAgent().match(/iPhone|iPod/i) ),
-            iPhoneiPadiPod: ( getUserAgent().match(/iPhone|iPad|iPod/i) ),
-            desktop: ( !getUserAgent().match(/iPhone|iPad|android/i) ),
-            android: ( getUserAgent().match(/android/i) ),
-            winPhone: ( /IEMobile/.test(getUserAgent()) ),
-            chromeCRIOS: ( getUserAgent().match(/chrome|crios/i) ),
-            iOS: (/iPad|iPhone|iPod/.test(getUserAgent()) && !MSStream  ),
-            iPad: ( getUserAgent().match(/iPad/i) ),
-            firefox: ( getUserAgent().match(/firefox/i) ),
-            phoneDevice:( getUserAgent().match(/iPhone|android/i) ),
-            iOS7: ( getUserAgent().match(/.*CPU.*OS 7_\d/i) ),
-            iPhoneSafari: ( function(){
-                var safari = !!getWindow().safari, iPhone = /iPhone/i.test(getUserAgent());
-                return !!(iPhone && safari);
-            })(),
-            tabletAndroidFirefox: (/(?:Android; Tablet).*(?:Firefox\/)/i.test(getUserAgent()) ),
-            msie: (function(){
-                var ua = getUserAgent();
-                var msie = ua.indexOf('MSIE ');
-                if (msie > 0) { // IE 10 or older => return version number
-                    return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
-                }
-                var trident = ua.indexOf('Trident/');
-                if (trident > 0) { // IE 11 => return version number
-                    var rv = ua.indexOf('rv:');
-                    return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
-                }
-                var edge = ua.indexOf('Edge/');
-                if (edge > 0) { // IE 12 => return version number
-                    return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
-                }
-            })()
-        }
-    }
-
-
-    function getHases() {
-        return {
-            chrome: getChrome()
-        }
-    }
-
-
-    function getGeetters() {
-        return {
-            firefoxVersion: (function(version) {
-                return (getUserAgent().toLowerCase().indexOf('firefox/' + version) !== -1);
-            })(),
-            androidVersion: (function() {
-                var match = getUserAgent().match(/Android\s([0-9\.]*)/);
-                return match ? match[1] : false;
-            })(),
-            iPadVersion: (getUserAgent().match(/(?:iPad);.*CPU.*(?:OS (.*)_)\d/i) )
-        }
-    }
-
-
-    quixot.System.os.name = operatingSystem;
-    quixot.System.os.version = operatingSystemSub;
-
-
-    fingerPrintData.plugins = pluginsList.sort().join('');
-    fingerPrintData.screen = quixot.Util.encodeObject(quixot.System.screen);
-    fingerPrintData.chrome = quixot.Util.encodeObject(getChrome(), 8);
-    fingerPrintData.netscape = quixot.Util.encodeObject(getNetscape(), 4);
-    fingerPrintData.navigator = quixot.Util.encodeObject(quixot.Util.simplify(getNavigator()));
-    fingerPrintData.plugins = quixot.Util.encodeObject(getNavigator().plugins, 3);
-    fingerPrintData.mimeTypes =  quixot.Util.encodeObject(getNavigator().mimeTypes, 3);
-
-
-    quixot.Fingerprint.data = function () {
-        return fingerPrintData;
-    }
-
-    return {
-        name: browserName,
-        version: browserVersion,
-        is: getIs(),
-        has: getHases(),
-        get: getGeetters()
-    }
-})();
-
-
-
-
-
-// mathml support
-//ActiveX || directx suport
-//http://browserspy.dk/math.php
-//http://browserspy.dk/svg.php
-//http://browserspy.dk/windowsmediaplayer.php
-//http://browserspy.dk/openoffice.php
-//http://browserspy.dk/soundcard.php
-//http://browserspy.dk/quicktime.php
-//http://browserspy.dk/realplayer.php
-
-
-
-/**
- * the unit testing namespace
- * @namespace Sancho
- * @memberof quixot
- */
-quixot.Sancho = (function (q) {
-    var config = {
-        debug: true,
-        maxListSize: 20,
-        strlist : 'abcdefghihklmnopqrstuvxyz',
-        logging: quixot.Logger.getDefaultConfig()
-    }
-
-
-    var memoData = {
-        strings: [],
-        objects: []
-    };
-
-    function randStrExist(value) {
-        return memoData.strings.indexOf(value+'') > -1
-    }
-
-
-    function saveStr(value) {
-        return memoData.strings.push(value+'');
-    }
-
-    function randomString(){
-        var date = new Date();
-        maxrand.str ++;
-        var sum = q.Util.atos(randInt(), config.strlist) + ''
-                + q.Util.atos(date.getMilliseconds(), config.strlist) + ''
-                + q.Util.atos(date.getMinutes(), config.strlist) + ''
-                + q.Util.atos(date.getHours(), config.strlist) + ''
-                + q.Util.atos(date.getDay(), config.strlist) + ''
-                + q.Util.atos(date.getDate(), config.strlist) + ''
-                + q.Util.atos(date.getMonth(), config.strlist) + ''
-                + q.Util.atos(date.getFullYear(), config.strlist) + ''
-                + q.Util.atos(date.getYear(), config.strlist) + ''
-            ;
-
-        return sum;
-
-    }
-
-    function monkey(strdata, iterations) {
-        // console.log('prepare ' + iterations);
-        // // if(!iterations) {
-        //     return;
-        // }
-
-        var calls = [];
-        for(var i = 0 ; i < iterations; i++) {
-            console.log('prepare ' + i);
-            console.log(randNr() + randomString() + randInt());
-
-            console.log(randListInt());
-
-             var tocalll = strdata.replace(/{string}/g, '"' + randomString()+ '"' )
-            //         .replace(/{number}/g, randNr() )
-                    .replace(/{integer}/g, randInt() )
-                    .replace(/{integerList}/g, JSON.stringify(randListInt()) )
-            //         .replace(/{numberList}/g, JSON.stringify(randListNr()) )
-            //         .replace(/{stringList}/g, JSON.stringify(randListString()) )
-                    .replace(/{objectList}/g, JSON.stringify(randListObj()) )
-            //         .replace(/{object}/g, JSON.stringify(randObj()) )
-                     .replace(/{any}/g, randAny() )
-            //     ;
-            // console.log('prepare ' + tocalll);
-             calls.push(tocalll);
-
-
-            eval(tocalll);
-
-        }
-
-        console.log(calls);
-
-//         setTimeout(function () {
-//
-//
-//             if(config.debug) {
-//                 console.log(iterations + 'tocall = ' + tocalll);
-//
-//             }
-//
-//             eval(tocalll);
-//             monkey(strdata, iterations -1);
-//         }, 2);
-
-    }
-
-
-    var nodeAssert;
-    if(typeof GLOBAL != 'undefined'){
-        try {
-            nodeAssert = require('assert');
-        }catch (e){
-            nodeAssert = false;
-        }
-        config.logging.logStack = false;
-    }
-
-
-
-    function equals(a, b) {
-
-        if(nodeAssert){
-            if(config.logging) {
-                quixot.Logger.getInstance('Tests', config.logging)
-                    .info('check if ' + a + ' === ' + b);
-            }
-            nodeAssert(a === b);
-        } else {
-            if(a == b) {
-                if(config.logging) {
-                    quixot.Logger.getInstance('Tests', config.logging)
-                        .info('check if ' + a + ' === ' + b + ' ] SUCCESS');
-                }
-            }
-            else {
-                throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
-            }
-        }
-
-
-        return a === b;
-    }
-
-
-    var maxrand = {
-        nr: 1.5,
-        intg: 10,
-        str: 1,
-        obj: 1,
-        arr: 1
-    }
-
-
-    function randList(maxSize, getter) {
-        var arr = [];
-        var limit = Math.round(Math.random()*maxSize) + 1;
-        for(var i = 0; i < limit; i++) {
-            if(getter) {
-                arr.push(getter());
-            }
-        }
-        return arr;
-    }
-
-
-    function randListNr(maxSize, maxRand) {
-        return randList(maxSize, function () {
-            return randNr(maxRand);
-        })
-    }
-
-
-    function randListInt(maxSize, maxRand) {
-        return randList(maxSize, function () {
-            return randInt();
-        });
-    }
-
-
-    function randListString(maxSize) {
-        if(!maxSize){
-            maxSize = config.maxListSize;
-        }
-        return randList(maxSize, randomString);
-    }
-
-
-    function randListObj(maxSize) {
-        if(!maxSize){
-            maxSize = config.maxListSize;
-        }
-        return randList(maxSize, randObj);
-    }
-
-
-    function randAny() {
-        var lrand = Math.round(Math.random() * 3);
-        switch (lrand) {
-            case 0:
-                return '"' +randomString()+ '"';
-            case 1:
-                return randInt();
-            case 2:
-                return randNr();
-        }
-
-        return randInt();
-    }
-
-
-    function randObj() {
-        maxrand.obj += 1;
-        var lmax = randInt(maxrand.obj);
-
-        var obj = {};
-        for(var i = 0; i < maxrand.obj; i++) {
-            obj[randomString()] = randAny();
-        }
-
-        return obj;
-    }
-
-
-
-
-
-
-    var uniqueVal = q.Cache.getInstance('@qtst').getSafe('lup', 1);
-    try {
-        uniqueVal = parseFloat(uniqueVal);
-    } catch (e) {
-        uniqueVal = new Date().getTime();
-    }
-
-
-    
-    function incr(asfloat) {
-        if (asfloat) {
-            uniqueVal+=0.01;
-        } else {
-            uniqueVal = parseInt(uniqueVal+1);
-        }
-        q.Cache.getInstance('@qtst').put('lup', uniqueVal);
-        return uniqueVal;
-    }
-    
-
-    function randInt(min, max) {
-       return Math.round(randNr(min, max))
-    }
-
-
-
-    
-    function randNr(min, max) {
-        if(min){
-            if(!+min) {
-                min = 1;
-            }
-
-            if(max){
-                if(!+max) {
-                    max = 2;
-                }
-                return min + (Math.random() * (max - min) );
-            }
-
-            return (Math.random() * min);
-        }
-        return incr();
-    }
-
-
-
-
-
-    q.Util.randNr = randNr,
-    q.Util.randInt = randInt,
-    q.Util.randList = randList,
-    q.Util.randListStr = randListString,
-    q.Util.randListObj = randListObj;
-    q.Util.incr = incr;
-    q.Util.randStr = randomString,
-    q.Util.randAny = randAny,
-    q.Util.randObj = randObj;
-
-
-
-    return {
-        equals: equals,
-        donkey: monkey,
-        config: config,
-        _memo: function () {
-            return {
-                data: memoData,
-                max: maxrand
-            };
-        }
-    }
-
-    /**
-     quixot.test.monkey('console.log({string}, {number}, {integer}, {integerList}, {numberList}, {stringList}, {objectList}, {object})')
-     */
-})(quixot);quixot.Tween = function(start, end, steps, object) {
-    var self = this;
-    var speed = 100;
-    var values = Easing(start, end, steps);
-    var count = 0;
-
-    this.onUpdate = function(value, object) {
-    };
-
-    this.onComplete = function(object) {
-    };
-
-    this.start = function() {
-        doAnimate();
-    };
-
-    var updateEvent = new UpdateEvent(speed);
-
-    function doAnimate() {
-        if (values[count]) {
-            count++;
-            if (self.onUpdate) {
-                self.onUpdate(values[count], object);
-            }
-            updateEvent.start(doAnimate);
-        } else {
-            if (self.onComplete) {
-                self.onComplete(object);
-                updateEvent.stop();
-            }
-        }
-    }
-};
-
-
-
-quixot.TweenMulti = function(startObjectProps, endObjectProps, steps, object) {
-    var self = this;
-    var speed = 100;
-    if (BrowserDetect.browser === 'Explorer') {
-        steps = Math.round(steps / 2);
-    }
-
-    var valuesContainer = [];
-    var result = {};
-    for (var i in startObjectProps) {
-        var value = Easing(startObjectProps[i], endObjectProps[i], steps);
-        result[i] = startObjectProps[i];
-        valuesContainer.push(value);
-    }
-
-    var count = 0;
-    this.onUpdate = function(object) {
-    };
-    this.onComplete = function(object) {
-    };
-    this.start = function() {
-        doAnimate();
-    };
-    var updateEvent = new UpdateEvent(speed);
-    var allowUpdate = false;
-    function doAnimate() {
-        var num = -1;
-        count++;
-        for (var i in result) {
-            num++;
-            if (valuesContainer[num][count]) {
-                result[i] = valuesContainer[num][count];
-                allowUpdate = true;
-            } else {
-                allowUpdate = false;
-            }
-
-        }
-
-        if (allowUpdate) {
-            if (self.onUpdate) {
-                self.onUpdate(result);
-            }
-            updateEvent.start(doAnimate);
-        } else {
-            if (self.onComplete) {
-                self.onComplete(result);
-            }
-        }
-    }
-};
-
-
-
-
-
-quixot.Easing = function(firstNumber, secondNumber, steps) {
-    if (firstNumber === 0) {
-        firstNumber = .001;
-    }
-
-    var arai = new Array();
-    var fixunit = secondNumber - firstNumber;
-    var unit = fixunit / steps;
-    for (var i = 0; i < steps + 1; i++) {
-        arai.push(firstNumber.toFixed(4));
-        firstNumber += unit;
-    }
-
-    return arai;
-};
-
-
-quixot._fullscreenmethods = (function () {
-    var REQUEST_FULLSCREEN_FUNCS = {
-        'requestFullscreen': {
-            'change': 'onfullscreenchange',
-            'request': 'requestFullscreen',
-            'error': 'onfullscreenerror',
-            'enabled': 'fullscreenEnabled',
-            'cancel': 'exitFullscreen',
-            'fullScreenElement': 'fullscreenElement'
-        },
-        'mozRequestFullScreen': {
-            'change': 'onmozfullscreenchange',
-            'request': 'mozRequestFullScreen',
-            'error': 'onmozfullscreenerror',
-            'cancel': 'mozCancelFullScreen',
-            'enabled': 'mozFullScreenEnabled',
-            'fullScreenElement': 'mozFullScreenElement'
-        },
-        'webkitRequestFullScreen': {
-            'change': 'onwebkitfullscreenchange',
-            'request': 'webkitRequestFullScreen',
-            'cancel': 'webkitCancelFullScreen',
-            'error': 'onwebkitfullscreenerror',
-            'fullScreenElement': 'webkitCurrentFullScreenElement'
-        },
-        'MSRequestFullScreen': {
-            'change': 'MSFullscreenChange',
-            'request': 'MSRequestFullScreen',
-            'cancel': 'MSCancelFullScreen',
-            'error': 'MSFullscreenError',
-            'fullScreenElement': 'MSCurrentFullScreenElement'
-        },
-        'msRequestFullScreen': {
-            'change': 'msFullscreenChange',
-            'request': 'msRequestFullscreen',
-            'cancel': 'msExitFullscreen',
-            'error': 'msFullscreenError',
-            'fullScreenElement': 'msCurrentFullScreenElement'
-        }
-    };
-
-    var fullScreenMethods = false;
-
-    if(typeof window == 'undefined') {
-        return fullScreenMethods;
-    }
-
-    var TEST_NODE = document.createElement('div');
-
-
-
-    for (var prop in REQUEST_FULLSCREEN_FUNCS) {
-        var currentTest = REQUEST_FULLSCREEN_FUNCS[prop];
-        for (var item in currentTest) {
-            var name = currentTest[item];
-            if (document[name]) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
-
-            if (TEST_NODE[name]) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
-
-
-            if (name in TEST_NODE) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
-
-            if (name in document) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
-        }
-    }
-
-
-    return fullScreenMethods;
-
-})();
-
-var HTML5Notification = (function() {
-
-
-    var defaultDesktopNotification = {
-        lifeTime: 5000,
-        title: 'notification!',
-        text: 'Here is the notification text',
-        picture: 'logo.png',
-        onclick: function() {
-        },
-        onclose: function() {
-        }
-    };
-
-
-    var _currentNotification = {};
-    var _timeoutId = false;
-
-
-    function setDesktopNotification(unique, settings) {
-        if (!settings) {
-            settings = defaultDesktopNotification;
-        } else {
-            for (var i in defaultDesktopNotification) {
-                if (!settings[i]) {
-                    settings[i] = defaultDesktopNotification[i];
-                }
-            }
-        }
-
-        var currentNotification;
-
-        function closeNotification() {
-            if (currentNotification) {
-                try {
-                    currentNotification.cancel();
-                } catch (ex) {
-                }
-
-                try {
-                    currentNotification.close();
-                } catch (ex) {
-                }
-            }
-        }
-
-
-
-
-        function makeChromeNotification() {
-            currentNotification = window.webkitNotifications.createNotification(
-                settings.picture,
-                settings.title,
-                settings.text
-            );
-            currentNotification.onclick = settings.onclick;
-            currentNotification.onclose = settings.onclose;
-
-            currentNotification.show();
-            if (unique) {
-                _currentNotification = currentNotification;
-            }
-        }
-
-
-        function makeFirefoxNotification() {
-            currentNotification = new Notification(settings.title, {body: settings.text, icon: settings.picture});
-            currentNotification.onclick = settings.onclick;
-            currentNotification.onclose = settings.onclose;
-            if (unique) {
-                _currentNotification = currentNotification;
-            }
-        }
-
-        if (_timeoutId) {
-            clearTimeout(_timeoutId);
-        }
-        if (unique) {
-            _timeoutId = setTimeout(closeNotification, settings.lifeTime);
-        } else {
-            setTimeout(closeNotification, settings.lifeTime);
-        }
-
-
-        //code for chrome:
-        if (window.webkitNotifications && BrowserDetect.browser != 'Safari') {
-            if (unique) {
-                closeNotification();
-            }
-
-            var havePermission = window.webkitNotifications.checkPermission();
-            if (havePermission == 0) {
-                makeChromeNotification();
-                return 'success';
-            } else if (havePermission == 1) {
-                window.webkitNotifications.requestPermission();
-                return 'pending-approval';
-            } else {
-                window.webkitNotifications.requestPermission();
-                return 'failed';
-            }
-        }
-        //code for firefox
-        else if (("Notification" in window)) {
-            if (unique) {
-                closeNotification();
-            }
-            if (Notification.permission === "granted") {
-                makeFirefoxNotification();
-                return 'success';
-            }
-            else if (Notification.permission !== 'denied') {
-                Notification.requestPermission(function(permission) {
-                    if (!('permission' in Notification)) {
-                        Notification.permission = permission;
-                    }
-                    if (permission === "granted") {
-                        makeFirefoxNotification();
-                    }
-                });
-                return 'pending-approval';
-            }
-            return 'failed';
-        }
-        return 'failed';
-    }
-
-
-
-    return {
-        setDesktopNotification: setDesktopNotification
-    };
-
-})();
-
-
-
-
-
-
-
-
-var HTML4Notification = (function() {
-
-    var defaultDesktopNotification = {
-        lifeTime: 5000,
-        title: 'Cam4 Chrome notification!',
-        text: 'Here is the notification text',
-        picture: 'http://edgecast.cam4s.com/web/images/logo.png',
-        onclick: function() {
-        },
-        onclose: function() {
-        }
-    };
-
-    var currentNotifications = {};
-
-
-
-    var notifySettings = {
-        updateId: '',
-        parent: {},
-        rules: {
-            'newshow': {
-                lifeTime: 30000,
-                onInit: function(item, list, callback) {
-                    item.style.position = 'absolute';
-                    item.style.right = '4px';
-                    item.style.top = '1400px';
-                    item.style.opacity = '0';
-                    //http://stackoverflow.com/questions/18578244/displaying-elements-other-than-fullscreen-element-html5-fullscreen-api
-                    item.style['z-index'] = 2147483648;
-                    callback();
-                },
-                onUpdate: function(item, index, list, callback) {
-                    console.log('on update ' + index);
-                    var itemHeight = (item.offsetHeight + 10 || item.clientHeight + 10 || 100);
-                    var tween;
-                    var bottomTo = Utils.getPageArgs().window.height - (itemHeight * (index + 1.5) + 10);
-
-                    if (item.style.opacity < .5) {
-                        tween = new TweenMulti({opacity: 0, top: 0}, {opacity: 1, top: bottomTo}, 20, item);
-                        tween.onUpdate = function(object) {
-                            item.style.opacity = object.opacity;
-                            item.style.top = object.top + 'px';
-                        };
-                    }
-                    else {
-                        var topFrom = Math.floor((item.style.top).replace('px', ''));
-                        tween = new TweenMulti({top: topFrom}, {top: bottomTo}, 24, item);
-                        tween.onUpdate = function(object) {
-                            item.style.top = object.top + 'px';
-                        };
-                    }
-
-                    tween.onComplete = function() {
-                        callback();
-                    };
-                    tween.start();
-                },
-                onRemove: function(div, callback) {
-                    var tween = new TweenMulti({opacity: 1}, {opacity: 0}, 20, div);
-                    tween.onUpdate = function(object) {
-                        if (div) {
-                            div.style.opacity = object.opacity;
-                        }
-                    }
-
-
-                    tween.onComplete = function() {
-                        try {
-                            document.body.removeChild(div);
-                        } catch (ex) {
-
-                        }
-                        callback();
-                    };
-
-                    tween.start();
-                }
-            },
-            'notification': {
-                lifeTime: 5000,
-                onInit: function(item, list, callback) {
-                    var index = list.length - 1;
-                    var lastItem = false;
-                    if (list[list.length - 2]) {
-                        lastItem = list[list.length - 2];
-                    }
-
-                    item.style.position = 'fixed';
-                    item.style.opacity = '0';
-                    item.style['z-index'] = '999999';
-
-
-                    document.body.appendChild(item);
-                    var itemHeight = $j(item).height() + 10;
-
-                    if (!this._lastRight) {
-                        this._lastRight = 1;
-                    }
-                    if (lastItem) {
-
-                        var lastBottom = parseInt($j('#' + lastItem)[0].style.bottom);
-                        item.style.bottom = lastBottom + itemHeight + 'px';
-                        item.style.right = this._lastRight + 'px';
-                    } else {
-                        item.style.bottom = '0px';
-                        item.style.right = '0px';
-                    }
-
-
-
-                    function updateNotifications() {
-                        var windowHeight = $j(window).height();
-                        var mainList = HTML4Notification.getNotificationList();
-                        var thisList = mainList['notification'];
-                        var occupiedHeight = 0;
-                        var offsetY = 0;
-                        var offsetX = 0;
-
-
-                        function animateFix(i) {
-                            if (document.getElementById(thisList[i])) {
-                                var citem = document.getElementById(thisList[i]);
-                                var itemHeight = $j(citem).height() + 10;
-                                var itemWidth = $j(citem).width() + 10;
-                                var marginBottom = (offsetX * itemHeight);
-                                occupiedHeight += itemHeight;
-
-                                var fromX = parseInt(citem.style.bottom) || 0;
-                                var fromY = parseInt(citem.style.right) || 0;
-
-                                var tween = new TweenMulti({x: fromX, y: fromY}, {x: marginBottom, y: offsetY}, 20, {});
-                                tween.onUpdate = function(props) {
-                                    citem.style.bottom = props.x + 'px';
-                                    citem.style.right = props.y + 'px';
-//                                    console.log(props);
-                                };
-                                tween.onComplete = function() {
-                                    if (occupiedHeight > (windowHeight - itemHeight)) {
-
-                                        occupiedHeight = 0;
-                                        offsetY += itemWidth;
-                                        HTML4Notification.rules.notification._lastRight = offsetY;
-                                        offsetX = 0;
-                                    }
-                                    else {
-                                        offsetX++;
-                                    }
-
-                                    animateFix(i + 1);
-                                };
-                                tween.start();
-
-                            }
-                        }
-
-                        animateFix(0);
-
-
-
-
-
-                    }
-
-                    if (!Cam4Event.hasEventListener(Cam4Event.WINDOW_RESIZED, 'notificationUpdate')) {
-                        Cam4Event.addEventListener(Cam4Event.WINDOW_RESIZED, updateNotifications, 'notificationUpdate');
-                    }
-                    updateNotifications();
-
-
-
-                    this.updateNotifications = updateNotifications;
-                    var tween = new TweenMulti({opacity: 0}, {opacity: 1}, 20, item);
-                    tween.onUpdate = function(object) {
-                        if (item) {
-                            item.style.opacity = object.opacity;
-                        }
-                    };
-                    tween.onComplete = function() {
-                        callback();
-                    };
-
-                    tween.start();
-
-                },
-                onUpdate: function(item, index, list, callback) {
-                },
-                onRemove: function(div, callback) {
-                    var tween = new TweenMulti({opacity: 1}, {opacity: 0}, 20, div);
-                    var self = this;
-                    tween.onUpdate = function(object) {
-                        if (div) {
-                            div.style.opacity = object.opacity;
-                        }
-                    };
-                    tween.onComplete = function() {
-                        callback();
-                        try {
-                            self.updateNotifications();
-                        } catch (ex) {
-
-                        }
-                    };
-
-                    tween.start();
-                }
-            }
-        }
-    };
-
-
-
-    function makeId(uid, styleName) {
-        return 'autoNotice' + uid + '_' + styleName;
-    }
-
-
-    function getStyleName(itemName) {
-        if (typeof itemName === 'undefined') {
-            return '';
-        }
-        var styleName;
-        var itemTemp = itemName.split('_');
-        styleName = itemTemp[itemTemp.length - 1];
-        return styleName;
-    }
-
-
-    function checkNotification(index, list) {
-
-        if (index < list.length) {
-            var itemName = list[index];
-            var styleName = getStyleName(itemName);
-//            console.log('check notification ' + itemName)
-            var settings;
-            if (HTML4Notification.rules[styleName]) {
-                settings = HTML4Notification.rules[styleName];
-            } else {
-                checkNotification(index + 1, list);
-                return;
-            }
-
-            if (document.getElementById(itemName)) {
-                settings.onUpdate(document.getElementById(itemName), index, list, function() {
-                    HTML4Notification.checkNotification(index + 1, list);
-                });
-            }
-
-            else {
-                HTML4Notification.checkNotification(index + 1, list);
-            }
-
-        }
-
-    }
-
-    function addNotification(text, uid, styleName) {
-
-        if (!HTML4Notification.rules[styleName]) {
-            styleName = 'newshow';
-        }
-
-
-        if (!currentNotifications[styleName]) {
-            currentNotifications[styleName] = [];
-        }
-
-        var settings = HTML4Notification.rules[styleName];
-
-        var itemIdName = makeId(uid, styleName);
-        if (document.getElementById(itemIdName)) {
-            document.body.removeChild(document.getElementById(itemIdName));
-        }
-
-        var currentList = currentNotifications[styleName];
-        var indx = currentList.indexOf(uid);
-
-        if (indx > -1) {
-            currentList.splice(indx, 1);
-        }
-
-        if (notifySettings['tid' + uid]) {
-            clearTimeout(notifySettings['tid' + uid]);
-        }
-
-
-
-        notifySettings['tid' + uid] = setTimeout(function() {
-            removeNotification(itemIdName, false);
-        }, settings.lifeTime);
-
-
-        var div = document.createElement('div');
-        div.innerHTML = text;
-        div.id = itemIdName;
-        currentList.push(itemIdName);
-
-        settings.onInit(div, currentList, function() {
-            if (!document.getElementById(itemIdName)) {
-                document.body.appendChild(div);
-            }
-            checkNotification(0, currentList);
-        });
-
-        return div;
-
-    }
-
-    function removeNotification(uid, event) {
-        console.log('remove ' + uid);
-        if (event) {
-            try {
-                event.preventDefault();
-                event.stopPropagation();
-            } catch (ex) {
-
-            }
-        }
-
-
-        var styleName = getStyleName(uid);
-
-        if (!HTML4Notification.rules[styleName] || !currentNotifications[styleName]) {
-            return;
-        }
-
-        var settings = HTML4Notification.rules[styleName];
-        var currentList = currentNotifications[styleName];
-
-        if (currentList.indexOf(uid) > -1) {
-            currentList.splice(currentList.indexOf(uid), 1);
-        }
-
-        if (document.getElementById(uid)) {
-            console.log('removing ' + uid);
-            settings.onRemove(document.getElementById(uid), function() {
-                if (document.getElementById(uid)) {
-                    document.body.removeChild(document.getElementById(uid));
-                }
-                checkNotification(0, currentList);
-            });
-
-
-        }
-    }
-
-    function removeAll(){
-        for(var i in currentNotifications){
-            for(var j = 0; j < currentNotifications[i].length; j++) {
-                var uid = currentNotifications[i][j];
-                if (document.getElementById(uid)) {
-                    document.body.removeChild(document.getElementById(uid));
-                }
-            }
-        }
-        currentNotifications = [];
-    }
-
-
-    return {
-        removeNotification: removeNotification,
-        addNotification: addNotification,
-        checkNotification: checkNotification,
-        removeAll: removeAll,
-        getSettings: function() {
-            return notifySettings;
-        },
-        getNotificationList: function() {
-            return currentNotifications;
-        },
-        makeId: makeId,
-        rules: notifySettings.rules
-    };
-
-})();
-
-
-
-
-
-var _num = 0;
-function test_HTML4Notifications() {
-    _num++;
-    var data = {
-        username: 'test' + '-testUser' + 'C$UID',
-        time: 20000,
-        imageLink: 'http://alex.cam4.com/images/logo.png',
-        title: '' + _num
-    };
-    Cam4Notifications.uid++;
-    data.lifeTime = Cam4Notifications.deltas.notificationLifetime;
-    var html = '<div class="browser-notification ' + Cam4Notifications.getStyle() + '" onclick="window.open(\'/' + data.title + '\',\'_blank\'); Utils.removeNotification(' + Cam4Notifications.uid + ')">';
-    html += '<div class="br-right">';
-    html += '<span class="br-title">';
-    html += '<span class="br-name">CAM4 - ' + data.title + '</span><span class="br-dismiss" onclick="Utils.removeNotification(' + Cam4Notifications.uid + ', event);" >X</span>';
-    html += '</span>';
-    html += '<span class="br-text">';
-    html += data.text;
-    html += '</span>';
-    html += '</div>';
-    html += '<div class="br-left">';
-    html += '<img src="' + data.picture + '"/>';
-    html += '</div>';
-    html += '</div>';
-    return HTML4Notification.addNotification(html, Cam4Notifications.uid, 'notification');
-}
-
-
-var ToolTip = (function() {
-
-    var generatedTooltips = [];
-
-    function on(event, text, settings) {
-
-        var defaultSettings = {
-            offsetX: 10,
-            offsetY: 0,
-            backgroundColor: '#000',
-            color: '#FFF',
-            className: 'tooltip',
-            width: 'auto',
-            maxWidth: '150px',
-            padding: '10px',
-            'font-size': '12px'
-        };
-        if (settings) {
-            defaultSettings = Utils.mergeObjects(defaultSettings, settings);
-        }
-
-
-
-        var toolTip = document.createElement('div');
-        var pagePoint = {x: 0, y: 0};
-        if (typeof event === 'string') {
-            var item = document.getElementById(event);
-            pagePoint.x = Utils.getOffset(item).left;
-            pagePoint.y = Utils.getOffset(item).top;
-        }
-
-        else if (event.domElement) {
-            pagePoint.x = Utils.getOffset(event.domElement).left;
-            pagePoint.y = Utils.getOffset(event.domElement).top;
-        }
-
-        else if (event) {
-
-            if (event.pageX) {
-                pagePoint.x = event.pageX;
-            } else if (event.clientX) {
-                pagePoint.x = event.clientX +
-                    document.body.scrollLeft +
-                    document.documentElement.scrollLeft;
-            }
-
-            if (event.pageY) {
-                pagePoint.y = event.pageY;
-            } else if (event.clientY) {
-                pagePoint.y = event.clientY +
-                    document.body.scrollTop +
-                    document.documentElement.scrollTop;
-            }
-
-        } else {
-            return false;
-        }
-
-
-        $j(toolTip).css({
-            position: 'absolute',
-            'z-index': '9999',
-            width: defaultSettings.width,
-            height: 'auto',
-            padding: defaultSettings.padding,
-            backgroundColor: defaultSettings.backgroundColor,
-            left: (defaultSettings.left) || (pagePoint.x + defaultSettings.offsetX + 'px'),
-            top: (defaultSettings.top) || (pagePoint.y + defaultSettings.offsetY + 'px'),
-            color: defaultSettings.color,
-            'border-radius': '2px',
-            '-moz-border-radius': '2px',
-            '-webkit-border-radius': '2px',
-            'font-size': defaultSettings['font-size'],
-            maxWidth: defaultSettings.maxWidth,
-            opacity: '1'
-        });
-        if (text) {
-            toolTip.innerHTML = text;
-        }
-
-
-
-        toolTip.setAttribute('id', 'autogenTooltip' +
-            Math.round(Math.random() * 100));
-        toolTip.setAttribute('class', defaultSettings.className);
-        var parent = document.body;
-        parent.appendChild(toolTip);
-        var tooltipObject = {
-            root: parent,
-            child: toolTip
-        };
-        Utils.lastTooltip = tooltipObject;
-        generatedTooltips.push(tooltipObject);
-        return tooltipObject;
-    }
-
-    function removeAll() {
-        for (var i = 0; i < generatedTooltips.length; i++) {
-            var tooltipobject = generatedTooltips[i];
-            try {
-                tooltipobject.root.removeChild(tooltipobject.child);
-            } catch (ex) {
-
-            }
-        }
-    }
-
-    return {
-        on: on,
-        removeAll: removeAll,
-        getAll: function() {
-            return generatedTooltips;
-        }
-    };
-})();
-
-var SoundPlayer = (function() {
-
-    var directory = '/js/sounds/';
-    var soundList = {};
-
-    function getSounds() {
-        return soundList;
-    }
-
-    function stopAudioInstance(sound) {
-        sound.volume = 0;
-        sound.pause();
-        sound = false;
-    }
-
-    function stopAudioElement(domAudioElementId) {
-        if (document.getElementById(domAudioElementId)) {
-            var audio = document.getElementById(domAudioElementId);
-            audio.pause();
-            audio.volume = 0;
-            document.body.removeChild(audio);
-        }
-    }
-
-
-    function createAudioElement(audioId, soundSource) {
-        stopAudioElement(audioId);
-        var audio = document.createElement('audio');
-        audio.id = audioId;
-        audio.style.display = 'none';
-        audio.setAttribute('autoplay', true)
-        var audioSourceMp3 = document.createElement('source');
-        audioSourceMp3.src = soundSource + '.mp3';
-        var audioSourceOgg = document.createElement('source');
-        audioSourceOgg.src = soundSource + '.ogg';
-        audio.appendChild(audioSourceMp3);
-        audio.appendChild(audioSourceOgg);
-        document.body.appendChild(audio);
-        return audio;
-    }
-
-    /**
-     * Play sound attaching a dom element. Name passed in source must be a
-     * valid filename  (mp3 and ogg) without extension
-     * @param {String} source
-     * @param {String} channel
-     * @return {undefined}
-     */
-    function playAttached(source, channel) {
-        var audioId = 'audio_';
-        //generate item id
-        if (channel) {
-            audioId += channel;
-        } else {
-            audioId += source;
-        }
-
-        var audio = createAudioElement(audioId, directory + source);
-        soundList[audioId] = audio;
-        audio.volume = 1;
-        audio.play();
-    }
-
-
-    /**
-     * Play a sound using an Audio instance.
-     * Name passed as source must be a valid filename without extension
-     * @param {String} source
-     * @param {String} channel
-     * @return {undefined}
-     */
-    function playAudioInstance(source, channel) {
-        var audio = new Audio(directory + source + '.mp3');
-
-        if (soundList[channel]) {
-            stopAudioInstance(soundList[source]);
-        }
-        if (soundList[source]) {
-            stopAudioInstance(soundList[source]);
-        }
-        if (channel) {
-            soundList[channel] = audio;
-        } else {
-            soundList[source] = audio;
-        }
-        audio.play();
-    }
-
-    /**
-     * Sound effect for a private show request
-     * @return {undefined}
-     */
-    function privateShowRequest() {
-        //playAttached('plim');   MQ-5522 -> wait for AC
-    }
-
-    function privateMessageReceived(){
-        //playAttached('plim');   MQ-5522 -> wait for AC
-    }
-
-    return {
-        privateMessageReceived: privateMessageReceived,
-        createAudioElement: createAudioElement,
-        playAudioInstance: playAudioInstance,
-        playAttached: playAttached,
-        stopAudioElement: stopAudioElement,
-        privateShowRequest: privateShowRequest,
-        getSounds: getSounds
-    };
-
-})();
-//
-//get the IP addresses associated with an account
-// http://stackoverflow.com/questions/37169701/get-current-machine-ip-in-js-no-third-party-services
-
-quixot.getIPs = function(callback){
-
-    try {
-        var ip_dups = {};
-        //compatibility for firefox and chrome
-        var RTCPeerConnection = window.RTCPeerConnection
-            || window.mozRTCPeerConnection
-            || window.webkitRTCPeerConnection;
-        var useWebKit = !!window.webkitRTCPeerConnection;
-
-        //bypass native webrtc blocking using an iframe
-        //NOTE: you need to have an iframe in the page right above the script tag
-        //<iframe id="iframe" sandbox="allow-same-origin" style="display: none"></iframe>
-
-
-        if (!RTCPeerConnection) {
-            var win = iframe.contentWindow;
-            RTCPeerConnection = win.RTCPeerConnection
-                || win.mozRTCPeerConnection
-                || win.webkitRTCPeerConnection;
-            useWebKit = !!win.webkitRTCPeerConnection;
-        }
-
-        //minimal requirements for data connection
-        var mediaConstraints = {
-            optional: [{RtpDataChannels: true}]
-        };
-        var servers = {iceServers: [{urls: "stun:stun.services.mozilla.com"}]};
-        //construct a new RTCPeerConnection
-        var pc = new RTCPeerConnection(servers, mediaConstraints);
-
-        function handleCandidate(candidate) {
-            //match just the IP address
-            var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
-            var ip_addr = ip_regex.exec(candidate)[1];
-            //remove duplicates
-            if (ip_dups[ip_addr] === undefined) {
-                callback(ip_addr);
-            }
-            ip_dups[ip_addr] = true;
-        }
-
-        //listen for candidate events
-        pc.onicecandidate = function (ice) {
-            //skip non-candidate events
-            if (ice.candidate) {
-                handleCandidate(ice.candidate.candidate);
-            }
-        };
-        //create a bogus data channel
-        pc.createDataChannel("");
-        //create an offer sdp
-        pc.createOffer(function (result) {
-            //trigger the stun server request
-            pc.setLocalDescription(result, function () {
-            }, function () {
-            });
-        }, function () {
-        });
-
-        //wait for a while to let everything done
-        setTimeout(function () {
-            //read candidate info from local description
-            var lines = pc.localDescription.sdp.split('\n');
-
-            lines.forEach(function (line) {
-                if (line.indexOf('a=candidate:') === 0) {
-                    handleCandidate(line);
-                }
-
-            });
-        }, 1000);
-    } catch (e) {
-        callback();
-    }
-}
-
-
-quixot.getIPs(function (ip) {
-});/**
- * @namespace Inject
- * @memberof quixot
- */
-quixot.Inject = (function () {
-    function injectJavascript(scriptSource, callback, toBottom) {
-        var thisIsReady = false;
-        var script = document.createElement('script');
-        script.async = 'async';
-        script.type = 'text/javascript';
-        script.onreadystatechange = function() {
-            if (this.readyState == 'complete') {
-                if (!thisIsReady) {
-                    thisIsReady = true;
-                    if (callback) {
-                        callback({
-                            status: 'ok',
-                            path: scriptSource
-                        });
-                    }
-                }
-            }
-        };
-        script.onload = function() {
-            if (!thisIsReady) {
-                thisIsReady = true;
-                callback({
-                    status: 'ok',
-                    path: scriptSource
-                });
-            }
-        };
-        script.onerror = function(err) {
-            if (!thisIsReady) {
-                thisIsReady = true;
-                callback({
-                    status: 'error',
-                    path: scriptSource
-                });
-            }
-        };
-        script.src = scriptSource;
-        var root = (document.getElementsByTagName('head')[0] ||
-        document.body ||
-        document.documentElement);
-        if (toBottom) {
-            root = (document.body ||
-            document.documentElement ||
-            document.getElementsByTagName('head')[0]);
-        }
-
-        root.appendChild(script);
-        return {
-            script: script,
-            root: root
-        };
-    }
-
-
-
-    function injectCss(cssPath, callback) {
-        var fileref = document.createElement('link');
-        fileref.setAttribute('rel', 'stylesheet');
-        fileref.setAttribute('type', 'text/css');
-        fileref.setAttribute('href', cssPath);
-        var thisIsReady = false;
-        fileref.onreadystatechange = function() {
-            if (this.readyState == 'complete') {
-                if (!thisIsReady) {
-                    thisIsReady = true;
-                    if (callback)
-                        callback('ok');
-                }
-            }
-        };
-        fileref.onload = function() {
-            if (!thisIsReady) {
-                thisIsReady = true;
-                if (callback)
-                    callback('ok');
-            }
-        };
-        fileref.onerror = function(err) {
-            if (!thisIsReady) {
-                thisIsReady = true;
-                if (callback) {
-                    callback('failed');
-                }
-            }
-        };
-        var root = (document.getElementsByTagName('head')[0] ||
-        document.body ||
-        document.documentElement);
-        root.appendChild(fileref);
-        return {
-            script: fileref,
-            root: root
-        };
-    }
-
-
-
-
-    function removeJavascriptNodes(array) {
-        for (var i = 0; i < array.length; i++) {
-            array[i].root.removeChild(array[i].script);
-            array.splice(i, 1);
-        }
-        return 0;
-    }
-
-    return {
-        /**
-         * Method to insert a javascript tag using a src
-         * @memberof quixot.Inject
-         * @param {String} scriptSource script source file
-         * @param {Method} callback the callback function
-         * @param {Boolean} toBottom if true,
-         * first it will check for body then for head
-         * @return {Object} an object with 2 properties:
-         * 'script' = the inserted script object, and 'root' = the container
-         */
-        js: injectJavascript,
-        /**
-         * @memberof quixot.Inject
-         * @param {String} cssPath path to css
-         * @param {Method} callback function to call when css is loaded
-         * @return {Object} an object with 2 properties:
-         * 'script' = the inserted css object, and 'root' = the container
-         */
-        css: injectCss,
-        /**
-         * @memberof quixot.Inject
-         * method to remove script tags from dom
-         * @param {Array} array, an array of objects with 2 properties:
-         * 'script' = the inserted script object, and 'root' = the container
-         * @return {Number} default 0
-         */
-        drop: removeJavascriptNodes,
-        
-        scripts: function (list, callback) {
-            var max = list.length, min = 0;
-
-            for(var i = 0; i< list.length; i++){
-                console.log(list[i]);
-                var citem = list[i];
-                if(citem.indexOf('js') > -1) {
-                    injectJavascript(citem, function (data) {
-                        console.log('loaded ' + data);
-                        min ++;
-                        if(min === max){
-                            callback();
-                        }
-                    }, true)
-                }
-            }
-        }
-    }
-})();
-
-
-
-
-
-
-
-quixot.http = {
-    method: {
-        post: 'POST',
-        get: 'GET'
-    },
-
-    send: function(options) {
-
-        var xmlhttp;
-        var method = 'post';
-        if (options.method) {
-            method = options.method;
-        }
-
-        if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-        } else if (window.ActiveXObject) {
-            try {
-                xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
-            } catch (err) {
-                try {
-                    xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
-                } catch (ex) {
-                    xmlhttp = false;
-                    console.log('xmlhttp failed to init');
-                    if (options.onexception) {
-                        options.onexception(ex);
-                    }
-                }
-            }
-        }
-
-        xmlhttp.onreadystatechange = function() {
-            try {
-                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                    if (options.success)
-                        options.success((xmlhttp.responseText ||
-                        xmlhttp.response), xmlhttp);
-                } else {
-                    if (options.onerror)
-                        options.onerror(xmlhttp);
-                }
-            } catch (ex) {
-               
-                if (options.onexception) {
-                    options.onexception(ex);
-                }
-            }
-        };
-        xmlhttp.onerror = function(err) {
-            if (options.onerror) {
-                options.onerror(err);
-            }
-        };
-        try {
-            xmlhttp.open(method, options.url, true);
-            try {
-                if (method === AjaxSender.method.post) {
-                    xmlhttp.setRequestHeader('Content-type',
-                        'application/x-www-form-urlencoded');
-                }
-            } catch (ex) {
-                console.log(ex);
-                if (options.onexception) {
-                    options.onexception(ex);
-                }
-            }
-        } catch (ex) {
-            console.log(ex);
-            if (options.onexception) {
-                options.onexception(ex);
-            }
-        }
-
-
-
-        try {
-            if (options.data) {
-                xmlhttp.send(options.data);
-            } else {
-                xmlhttp.send();
-            }
-        } catch (exception) {
-            console.log(exception);
-            if (options.onexception) {
-                options.onexception(exception);
-            }
-        }
-
-        return 0;
-    }
-};
