@@ -1016,6 +1016,7 @@ function url_get_params(url) {
 }
 
 
+
 function url_getDomainFromUrl(url){
     url = url + ''; //to avoid indexOf failing
     var domain = (url.indexOf('://') > -1) ? url.split('/')[2] : url.split('/')[0];
@@ -1423,11 +1424,11 @@ screen_info = (function () {
                 }
 
                 if(window.screen.availWidth	) {
-                    availWidth	 = window.screen.availWidth	;
+                    availWidth = window.screen.availWidth	;
                 }
 
                 if(window.screen.colorDepth	) {
-                    colorDepth	 = window.screen.colorDepth	;
+                    colorDepth	= window.screen.colorDepth	;
                 }
 
                 if(window.screen.pixelDepth	) {
@@ -2481,44 +2482,28 @@ if(__isbrowser()){
 
 
 function replaceItem(item, i){
-         var expectedTop = (i * 80), actualTop = parseFloat(item.style.top.replace('px', ''));
-//         console.log(item.id, actualTop, expectedTop, item.style.top);
-
+       var expectedTop = (i * 80) + 5, actualTop = parseFloat(item.style.top.replace('px', ''));
         new Tween(actualTop, expectedTop, 50).onUpdate(function (value) {
-                         if(+value){
+             if(+value){
+                item.style.top = value + 'px';
+             }
 
-                            item.style.top = value + 'px';
-         //                    _styleElement(item, {
-         //                        top: value + 'px'
-         //                    });
-                           //  console.log('animate ' + item.id+ " " + value)
-
-                         }
-
-                     }).start();
+        }).start();
 }
 
 
 function rearrangehtml4() {
-
     for(var i = 0; i <  html4buffer.length; i++) {
-
-    replaceItem(html4buffer[i].item, i);
-
-
-
-
-       // if(actualTop != expectedTop) {
-
-      //  }
-//         console.log(html4buffer.length, actualTop,expectedTop)
+        replaceItem(html4buffer[i].item, i);
     }
-
 }
 
-function _html4notification(title, text, picture, lifetime, href) {
+function _html4notification(title, text, picture, lifetime, success, failure, onclick, onclose) {
 
     if(!__isbrowser()){
+        if(failure){
+            failure();
+        }
         return false;
     }
 
@@ -2601,30 +2586,194 @@ function _html4notification(title, text, picture, lifetime, href) {
 
     rearrangehtml4();
 
-
     _html4notification_pid++;
       var action = 'window["'+__html4notifyRemove + '"](\'' + identifier + '\')';
 
-    root.remove = eval('(function rnmd'+identifier+'(){ console.log("removing"); return function() { '+action+' }; } )()');
+    root.remove = eval('(function __rmhtml4_'+identifier+'(){ return function() { '+action+' }; } )()');
+
+    if(lifetime){
+        setTimeout(function () {
+            eval(action);
+        }, lifetime)
+    }
+
+    if(success){
+        success(root);
+    }
     return root;
 };
 
+var incrprop = '___qwincrprop' + randomString(),
+    nww = 200, nwh = 100,
+    mnw = Math.round(screen_info.width / nww),
+    mnh = Math.round(screen_info.height / nwh),
+    mnmax = mnw > mnh ? mnv : mnh,
+    matrix = [];
 
-function _html4Winotification(title, text, picture, lifetime, href) {
+
+
+window[incrprop] = 0;
+
+for(var i = 0; i < mnw; i++){
+    for(var j = 0; j < mnh - 1; j++){
+        matrix.push([i * nww, j * nwh]);
+    }
+}
+
+var matrixpid =0;
+
+
+
+
+
+
+function _html4Winotification(title, text, picture, lifetime, success, failure, onclick, onclose) {
 
     if(!__isbrowser() || !getIs().desktop){
+        if(failure){
+            failure()
+        }
         return false;
     }
 
-    var position = 'left=0,top=10,width=200,height=100';
-    var a = window.open('', '_blank', 'channelmode=yes,menubar=no,status=no,resizable=no,scrollbars=no,location=no,channelmode=no,titlebar=no,toolbar=no,directories=no,fullscreen=no,'+ position)
+    matrixpid++;
+    if(matrixpid > matrix.length - 1 ){
+        matrixpid = 0;
+    }
+    var expectedTop = matrix[matrixpid][0],
+        expectedLeft =  matrix[matrixpid][1],
+
+        a = window.open('', '_blank', 'channelmode=no,menubar=no,status=no,resizable=no,scrollbars=no,location=no,channelmode=no,titlebar=no,toolbar=no,directories=no,fullscreen=no,'
+            +  'left='+expectedLeft+',top='+ expectedTop +',width='+nww+',height=' + nwh);
 
     if(a){
-        var d = a.document;
+        var pid = randomString() + _html4notification_pid,
+            closeAction = 'window["' + pid + '"].close();  window[' + incrprop + ']--;',
+            d = a.document;
+        _html4notification_pid++;
+        window[pid] = a;
+        a.remove = 'eval(function __rmvwin_'+pid+'(){ return function(){ '+closeAction+' } })';
+
+
         d.write(title + text);
+
+        window[incrprop]++;
+        if(lifetime){
+            eval('setTimeout(function () { ' + closeAction + '},'+lifetime+');');
+        }
+        if(success){
+            success(a);
+        }
+        return a;
+    }
+    if(failure){
+        failure()
+    }
+    return false;
+}
+
+//code for chrome:
+
+//code for firefox
+
+var isHttpOrHttps = (function () {
+    if(document && document.URL) {
+        var protocol = url_decode(document.URL).protocol;
+        return protocol === 'http' || protocol === 'https';
+    }
+    return false;
+})();
+
+
+function _html5notification(title, text, picture, lifetime, success, failure, onclick, onclose){
+
+
+    if(!__isbrowser() || !isHttpOrHttps){
+        if(failure){
+            failure();
+        }
+        return false;
     }
 
-    return a;
+
+
+    var currentNotification = null;
+
+    function doNotification() {
+        if(window.webkitNotifications) {
+            currentNotification = window.webkitNotifications.createNotification(
+                picture, title, text
+            );
+            // currentNotification.onclick = settings.onclick;
+            // currentNotification.onclose = settings.onclose;
+
+            currentNotification.show();
+        }
+
+        else {
+            currentNotification = new Notification(title, {body: text, icon: picture});
+            // currentNotification.onclick = settings.onclick;
+            // currentNotification.onclose = settings.onclose;
+        }
+
+        if(currentNotification){
+            console.log(currentNotification);
+            currentNotification.remove = function () {
+                if (currentNotification) {
+                    try {
+                        currentNotification.cancel();
+                    } catch (ex) {
+                    }
+
+                    try {
+                        currentNotification.close();
+                    } catch (ex) {
+                    }
+                }
+            }
+        }
+    }
+
+    if (window.webkitNotifications && browserName != 'Safari') {
+        var havePermission = window.webkitNotifications.checkPermission();
+
+        if (havePermission == 0) {
+            doNotification();
+        }  else {
+            havePermission = window.webkitNotifications.requestPermission();
+            if (havePermission == 0) {
+                doNotification();
+            } else if(failure){
+                failure();
+            }
+        }
+    }
+
+    else if (('Notification' in window)) {
+        if (Notification.permission === "granted") {
+            doNotification();
+        }
+        else {
+            Notification.requestPermission(function(permission) {
+                if (permission === "granted") {
+                    doNotification();
+                } else  if(failure){
+                    failure();
+                }
+            });
+        }
+    }
+}
+
+
+function cross_notify(title, text, picture, lifetime, success, failure, onclick, onclose) {
+    _html5notification(title, text, picture, lifetime, success, function () {
+        _html4Winotification(title, text, picture, lifetime, success, function () {
+            _html4notification(title, text, picture, lifetime, success, function () {
+                console.log('TODO');
+            }, onclick, onclose);
+        }, onclick, onclose);
+    }, onclick, onclose);
 }
 
 
@@ -3512,9 +3661,7 @@ return {
     rearrange: rearrangehtml4,
     
     Mingui: {
-        notify: function (title, text, picture, lifetime, href) {
-            return _html4notification(title, text, picture, lifetime, href);
-        }
+        notify: cross_notify,
     },
 
     /**

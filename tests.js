@@ -30,9 +30,6 @@ log4CustomerSupport.trace('and client could see stored data');
 log4CustomerSupport.trace('by calling in console');
 log4CustomerSupport.trace('quixot.Logger.getInstance(\'log4CustomerSupport\').getLogs().trace');
 
-
-
-
 quixot.Util.atos(5, '123');
 eq(quixot.Util.atos('aa'), 'aa');
 eq(quixot.Util.atos(123), 'md');
@@ -56,11 +53,6 @@ Sancho.hasData(quixot.System.os.version);
 
 var img = 'https://scontent-frt3-1.xx.fbcdn.net/v/t1.0-0/p118x118/15380632_604271709773684_2169990880710390381_n.jpg?oh=0c50a6c045ecded702c53527bcb7e14e&oe=58B6E4A7';
 
-for(var i = 0; i < 10; i++){
-  var a =  quixot.Mingui.notify('Lorem ipsum' + i, 'Lorem ipsum ' + i + '<br /> doloret sit amet. <br /> Big bag texxxt :)', img);
-
-//    setTimeout(function(){
-//        console.log('do remove' + i)
-//        a.remove();
-//    }, 1000 * i)
+for(var i = 0; i < 5; i++){
+  var a =  quixot.Mingui.notify('Lorem ipsum' + i, 'Lorem ipsum ' + i + ' doloret sit amet. Big bag texxxt :)', img, (i+1) * 1000);
 }

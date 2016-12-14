@@ -42,6 +42,7 @@
         "lib/015_tween.js",
         "lib/016_mingui.js",
         "lib/016_1html4notification.js",
+        "lib/016_2html5notification.js",
         "lib/017_media.js",
         "lib/018_rtc.js",
         "lib/019_injectors.js",
