@@ -124,17 +124,23 @@
 
 
     <script>
-        document.getElementById('fingerprint_identifier').innerHTML = quixot.Fingerprint.identifier();
-        document.getElementById('fingerprint_text').innerHTML = quixot.Fingerprint.text();
-        document.getElementById('fingerprint_numbers').innerHTML = quixot.Fingerprint.numbers();
-        document.getElementById('browser_name').innerHTML = quixot.Browser.name;
-        document.getElementById('browser_version').innerHTML = quixot.Browser.version;
-        document.getElementById('sys_os_name').innerHTML = quixot.System.os.name;
-        document.getElementById('sys_os_version').innerHTML = quixot.System.os.version;
+        function placeData() {
+            document.getElementById('fingerprint_identifier').innerHTML = quixot.Fingerprint.identifier();
+            document.getElementById('fingerprint_text').innerHTML = quixot.Fingerprint.text();
+            document.getElementById('fingerprint_numbers').innerHTML = quixot.Fingerprint.numbers();
+            document.getElementById('browser_name').innerHTML = quixot.Browser.name;
+            document.getElementById('browser_version').innerHTML = quixot.Browser.version;
+            document.getElementById('sys_os_name').innerHTML = quixot.System.os.name;
+            document.getElementById('sys_os_version').innerHTML = quixot.System.os.version;
+        }
 
-
-
-
+        if(typeof HTMLPreview != 'undefined'){
+            setTimeout(function () {
+                placeData();
+            }, 1000 * 2)
+        } else {
+            placeData()
+        }
 
     </script>
 
