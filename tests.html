@@ -38,8 +38,7 @@
                 font-size: 14px;
             }
 
-            #quixotFileAppender {
-                /*position: absolute;*/
+            #qfa {
                 width: 100%;
                 overflow: scroll;
                 z-index: 9999;
@@ -58,6 +57,7 @@
                 display: inline;
             }
         </style>
+
     </head>
 
 
@@ -68,84 +68,28 @@
 
 
 
-            <!--<script src ="lib/brock.js"></script>-->
-
-
-            <h1>Logger</h1>
-            <div class="row">
-
-                <div class="size12"><code>mySecretKey={"log4CustomerSupport":{"fileAppender":true}}</code></div>
-                <div class="size12"><code>mySecretKey={"log4CustomerSupport":{"info": {"fileAppender":true}} }</code></div>
-
-                <pre id="quixotFileAppender"></pre>
-            </div>
-
-
-            <h1>Browser</h1>
-            <div class="row">
-                <h2>name</h2>
-                <div id="browser_name" class="size14"></div>
-                <h2>version</h2>
-                <div id="browser_version" class="size14"></div>
-            </div>
-
-
-            <h1>System</h1>
-            <div class="row">
-                <h2>os.name</h2>
-                <div id="sys_os_name" class="size14"></div>
-                <h2>os.version</h2>
-                <div id="sys_os_version" class="size14"></div>
-            </div>
-
-
-
-
-
-            <h1>Fingerprint</h1>
-            <h2>identifier()</h2>
-            <div id="fingerprint_identifier" class="bigtext"></div>
-
-            <h2>text()</h2>
-            <div id="fingerprint_text" class="bigtext"></div>
-
-            <h2>numbers()</h2>
-            <div id="fingerprint_numbers" class="bigtext"></div>
-
-
-
-            <script src ="dist/quixot.js"></script>
-
-
-
     </body>
 
 
+    <div id="ctrl" name="ctrl" class="controller-new">
+        <div type="string" name="prop">div value</div>
+        <input type="text" name="name" value="inputValue"/>
+        <textarea name="textarea">textarea value</textarea>
+    </div>
 
+    {{ctrl.name}} {{ctrl.textarea}} {{ctrl.prop}}
+
+
+    <script src ="dist/quixot.js"></script>
 
     <script>
-        function placeData() {
-            document.getElementById('fingerprint_identifier').innerHTML = quixot.Fingerprint.identifier();
-            document.getElementById('fingerprint_text').innerHTML = quixot.Fingerprint.text();
-            document.getElementById('fingerprint_numbers').innerHTML = quixot.Fingerprint.numbers();
-            document.getElementById('browser_name').innerHTML = quixot.Browser.name;
-            document.getElementById('browser_version').innerHTML = quixot.Browser.version;
-            document.getElementById('sys_os_name').innerHTML = quixot.System.os.name;
-            document.getElementById('sys_os_version').innerHTML = quixot.System.os.version;
-        }
 
-        if(typeof HTMLPreview != 'undefined'){
-            setTimeout(function () {
-                placeData();
-            }, 1000 * 2)
-        } else {
-            placeData()
+        var model = {
+            a: {
+                b: 1, d: 2
+            }
         }
-
+        quixot.Dulcineea.templateRender('{{a.b}}, {{a.d}}', model);
     </script>
-
     <script src ="tests.js"></script>
-
-
-   
 </html>

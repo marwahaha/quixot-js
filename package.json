@@ -1,6 +1,6 @@
 {
   "name": "quixot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "the missing javascript library",
   "main": "dist/quixot.js",
   "scripts": {
@@ -13,14 +13,14 @@
   "keywords": [
     "utils",
     "random",
-    "string",
-    "browser",
-    "fingerprint",
-    "operating",
-    "system",
-    "fingerprint",
-    "unit",
-    "testing"
+    "browser fingerprinting",
+    "operating system detection",
+    "unit testing",
+    "html5 notification",
+    "smart tv",
+    "Tizen",
+    "time utils",
+    "MVC"
   ],
   "author": "Alexandru Stefan",
   "license": "ISC",

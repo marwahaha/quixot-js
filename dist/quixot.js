@@ -25,6 +25,31 @@ if (typeof Array.isArray === 'undefined') {
 }
 
 
+if (!String.prototype.trim) {
+  String.prototype.trim = function () {
+    return this.replace(/^\s+|\s+$/g, '');
+  };
+}
+
+if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position){
+        position = position || 0;
+        return this.substr(position, searchString.length) === searchString;
+    };
+}
+
+if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, position) {
+        var subjectString = this.toString();
+        if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+            position = subjectString.length;
+        }
+        position -= searchString.length;
+        var lastIndex = subjectString.lastIndexOf(searchString, position);
+        return lastIndex !== -1 && lastIndex === position;
+    };
+}
+
 if(typeof setTimeout === 'undefined'){
     setTimeout = function () {
         console.log('setTimeout is not a function')
@@ -36,7 +61,7 @@ if(typeof JSON === 'undefined'){
         parse: function(sJSON) { return eval('(' + sJSON + ')'); },
         stringify: (function () {
             var toString = Object.prototype.toString;
-            var isArray = Array.isArray || function (a) { return toString.call(a) === '[object Array]'; };
+            var _ia = Array._ia || function (a) { return toString.call(a) === '[object Array]'; };
             var escMap = {'"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t'};
             var escFunc = function (m) { return escMap[m] || '\\u' + (m.charCodeAt(0) + 0x10000).toString(16).substr(1); };
             var escRE = /[\\"\u0000-\u001F\u2028\u2029]/g;
@@ -50,7 +75,7 @@ if(typeof JSON === 'undefined'){
                 } else if (typeof value === 'object') {
                     if (typeof value.toJSON === 'function') {
                         return stringify(value.toJSON());
-                    } else if (isArray(value)) {
+                    } else if (_ia(value)) {
                         var res = '[';
                         for (var i = 0; i < value.length; i++)
                             res += (i ? ', ' : '') + stringify(value[i]);
@@ -73,228 +98,280 @@ if(typeof JSON === 'undefined'){
 
 
 if (!Array.prototype.indexOf) {
-    Array.prototype.indexOf = function(searchElement, fromIndex) {
-
+    Array.prototype.indexOf = function(srce, frmi) {
         var k;
-
-        // 1. Let o be the result of calling ToObject passing
-        //    the this value as the argument.
         if (this == null) {
             throw new TypeError('"this" is null or not defined');
         }
-
         var o = Object(this);
-
-        // 2. Let lenValue be the result of calling the Get
-        //    internal method of o with the argument "length".
-        // 3. Let len be ToUint32(lenValue).
         var len = o.length >>> 0;
-
-        // 4. If len is 0, return -1.
         if (len === 0) {
             return -1;
         }
-
-        // 5. If argument fromIndex was passed let n be
-        //    ToInteger(fromIndex); else let n be 0.
-        var n = fromIndex | 0;
-
-        // 6. If n >= len, return -1.
+        var n = frmi | 0;
         if (n >= len) {
             return -1;
         }
-
-        // 7. If n >= 0, then Let k be n.
-        // 8. Else, n<0, Let k be len - abs(n).
-        //    If k is less than 0, then let k be 0.
         k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
-
-        // 9. Repeat, while k < len
         while (k < len) {
-            // a. Let Pk be ToString(k).
-            //   This is implicit for LHS operands of the in operator
-            // b. Let kPresent be the result of calling the
-            //    HasProperty internal method of o with argument Pk.
-            //   This step can be combined with c
-            // c. If kPresent is true, then
-            //    i.  Let elementK be the result of calling the Get
-            //        internal method of o with the argument ToString(k).
-            //   ii.  Let same be the result of applying the
-            //        Strict Equality Comparison Algorithm to
-            //        searchElement and elementK.
-            //  iii.  If same is true, return k.
-            if (k in o && o[k] === searchElement) {
+            if (k in o && o[k] === srce) {
                 return k;
             }
             k++;
         }
         return -1;
     };
-}/**
+}
+
+/**
  * @namespace quixot
  */
 var quixot = (function(){
 
 
 
+var $S = (typeof 'string') + '',
+    $N = (typeof 2) + '',
+    $O = (typeof {}) + '',
+    $B = (typeof true) + '',
+    $F = (typeof function(){}) + '',
+    $A = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    string_characters = $A + '\'";:,<.>/?[{]}=+-_)(*&^%$#@!`~\t\n ',
+    $A = $A.split(''),
+    string_characters = string_characters.split(''),
 
+ 
 
-var strType = (typeof 'string') + '',
-    nrType = (typeof 2) + '',
-    objType = (typeof {}) + '',
-    boolType = (typeof true) + '',
-    fncType = (typeof function(){}) + '',
-    alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-
-
-var fingerPrintData = {
-    _nsp: [0],
-    _errs: [0],
-    registeredMethods: '',
-    computerName: (function getComputerName() {
-        var cname = '[unk]';
-        try {
-            var network = new ActiveXObject('WScript.Network');
-            cname = (network.computerName);
-        }
-        catch (e) {
-            cname = '[erunk]';
-        }
-        return cname;
-    })(),
-    dataTypes: strType +':'+ nrType+ ':' + objType+':' + boolType+':' + fncType,
-    pi: (function () {
-        return Math.PI;
-    })(),
-    ln2: (function () {
-        return Math.LN2;
-    })(),
-    ln10: (function () {
-        return Math.LN10;
-    })(),
-    log2e: (function () {
-        return Math.LOG2E;
-    })(),
-    log10e: (function () {
-        return Math.LOG10E;
-    })(),
-    sqrt1_2: (function () {
-        return Math.SQRT1_2;
-    })(),
-    sqrt: (function () {
-        return Math.SQRT2;
-    })(),
-    _timeZoneAbbr : (function(){
-        var d = new Date() + '', parts = d.split('(');
-        if(parts.length > 0) {
+    $F = {
+        _nsp: [0],
+        _errs: [0],
+        rm: '',
+        computerName: (function getComputerName() {
+            var cname = '[unk]';
             try {
-                d = parts[1].split(')')[0];
-            } catch (e) {
-                d = stringify(e, 5);
+                var network = new ActiveXObject('WScript.Network');
+                cname = (network.computerName);
             }
+            catch (e) {
+                cname = '[erunk]';
+            }
+            return cname;
+        })(),
+        dt: $S +':'+ $N+ ':' + $O+':' + $B+':' + $F,
+        pi: (function () {
+            return Math.PI;
+        })(),
+        ln2: (function () {
+            return Math.LN2;
+        })(),
+        ln10: (function () {
+            return Math.LN10;
+        })(),
+        lg2e: (function () {
+            return Math.LOG2E;
+        })(),
+        lg10e: (function () {
+            return Math.LOG10E;
+        })(),
+        s12: (function () {
+            return Math.SQRT1_2;
+        })(),
+        s: (function () {
+            return Math.SQRT2;
+        })(),
+        _timeZoneAbbr : (function(){
+            var d = new Date() + '', p = d.split('(');
+            if(p.length > 0) {
+                try {
+                    d = p[1].split(')')[0];
+                } catch (e) {
+                    d = _usa(e, 5);
+                }
+                return d;
+            }
+            return '';
+        })(),
+        fun: (function () {
+            var t = '';
 
-            return d;
-        }
-        return '';
-    })(),
-    fun: (function () {
-        var txt = '';
-
-        function check(id, method, p1, p2) {
-            var result = '';
-            if (method) {
-                if (p1 && p2) {
-                    try {
-                        result =  method(p1, p2)
-                    } catch (e) {
-                        result = e+'';
+            function c(i, m, p, g) {
+                var r = '';
+                if (m) {
+                    if (p && g) {
+                        try {
+                            r =  m(p, g)
+                        } catch (e) {
+                            r = e+'';
+                        }
+                    } else {
+                        try {
+                            r =  m(p)
+                        } catch (e) {
+                            r = e+'';
+                        }
                     }
                 } else {
-                    try {
-                        result =  method(p1)
-                    } catch (e) {
-                        result = e+'';
-                    }
+                    r = '[NS]';
                 }
-            } else {
-                result = '[NS]';
+                return i + r;
             }
-            return id + result;
+
+            if(typeof Math != 'undefined') {
+                t+= c('imul', Math.imul, 0xfffffffe, 5);
+                t+= c('acos', Math.acos, 0.5);
+                t+= c('acosh', Math.acosh, 2);
+                t+= c('asin', Math.asin, 0.5);
+                t+= c('asinh', Math.asinh, 1);
+                t+= c('atan', Math.atan, 1);
+                t+= c('atanh', Math.atanh, 0.5);
+                t+= c('cbrt', Math.cbrt, 2);
+                t+= c('ceil', Math.ceil, -7.004);
+                t+= c('clz32', Math.clz32, true);
+                t+= c('cos', Math.cos, 1);
+                t+= c('cosh', Math.cosh, 1);
+                t+= c('exp', Math.exp, 1);
+                t+= c('expm1', Math.expm1, 1);
+                t+= c('floor', Math.floor, -45.95);
+                t+= c('fround', Math.fround, 1.337);
+                t+= c('log', Math.log, 10);
+                t+= c('log10', Math.log10, 2);
+                t+= c('log1p', Math.log1p, 1);
+                t+= c('log2', Math.log2, 3);
+                t+= c('sin', Math.sin, 1);
+                t+= c('sinh', Math.sinh, 1);
+                t+= c('sqrt', Math.sqrt, 2);
+                t+= c('tan', Math.tan, 1);
+                t+= c('tanh', Math.tanh, 1);
+            }
+
+            if (typeof NaN != 'undefined') {
+                t+='NaN' + NaN;
+            }
+
+            if (Math.hypot) {
+                t+='hypot'+ Math.hypot(3, 4, '5') + '#' + Math.hypot(3, 4);
+            }
+
+            return t;
+
+        })()
+    },
+
+    $eU = [
+        'new File([],[])',
+        'new Image()', 'new Blob()',
+        'new AnimationEvent(1)',
+        'new WebKitCSSMatrix()',
+        'document.createElement(\'canvas\')',
+        'document.createElement(\'video\')',
+        'document.createElement(\'svg\')',
+        'document.createElement(\'rect\')',
+        'document.createElement(\'audio\')',
+        'Math',
+        'document.createElement(\'div\').style'
+    ],
+    $eI = [],
+    _uat_memodata = {},
+
+    registeredEvents = {},
+    eventDispatchers = {},
+
+    $bw = (function(){
+        if(typeof window != 'undefined'){
+            return window;
+        }
+        return {};
+    })(),
+
+    $bd = (function(){
+        if(typeof window != 'undefined' && typeof document != 'undefined'){
+            return document;
+        }
+        return {};
+    })(),
+
+    _gba = function () {
+        if($bd){
+            return $bd.body
+        }
+    },
+
+
+    $bn = (function () {
+        if(typeof navigator != 'undefined') {
+            return navigator;
         }
 
-        if(typeof Math != 'undefined') {
-            txt+= check('imul', Math.imul, 0xfffffffe, 5);
-            txt+= check('acos', Math.acos, 0.5);
-            txt+= check('acosh', Math.acosh, 2);
-            txt+= check('asin', Math.asin, 0.5);
-            txt+= check('asinh', Math.asinh, 1);
-            txt+= check('atan', Math.atan, 1);
-            txt+= check('atanh', Math.atanh, 0.5);
-            txt+= check('cbrt', Math.cbrt, 2);
-            txt+= check('ceil', Math.ceil, -7.004);
-            txt+= check('clz32', Math.clz32, true);
-            txt+= check('cos', Math.cos, 1);
-            txt+= check('cosh', Math.cosh, 1);
-            txt+= check('exp', Math.exp, 1);
-            txt+= check('expm1', Math.expm1, 1);
-            txt+= check('floor', Math.floor, -45.95);
-            txt+= check('fround', Math.fround, 1.337);
-            txt+= check('log', Math.log, 10);
-            txt+= check('log10', Math.log10, 2);
-            txt+= check('log1p', Math.log1p, 1);
-            txt+= check('log2', Math.log2, 3);
-            txt+= check('sin', Math.sin, 1);
-            txt+= check('sinh', Math.sinh, 1);
-            txt+= check('sqrt', Math.sqrt, 2);
-            txt+= check('tan', Math.tan, 1);
-            txt+= check('tanh', Math.tanh, 1);
+        return $bw.navigator || {};
+    })(),
+    
+    $bu = (function () {
+        return $bn.userAgent || ' ';
+    })(),
+    
+    $bv = (function () {
+        return $bn.appVersion || {};
+    })();
+
+    $eb = (function () {
+        return  (typeof  window != 'undefined');
+    })();
+
+    $en = (function () {
+        return (typeof module !== 'undefined' && module.exports)
+    })(),
+
+    document_getElementById = function (i) {
+        return document.getElementById(i);
+    },
+
+    document_createElement = function (n, i, s, h) {
+        var d = document.createElement(n);
+        if(i){
+            d.id = i;
+        }
+        if(s){
+            for(var j in s){
+                d.style[j] = s[j];
+            }
         }
 
-        if (typeof NaN != 'undefined') {
-            txt+='NaN' + NaN;
+        if(h){
+            d.innerHTML = h;
         }
+        return d;
+    },
 
-        if (Math.hypot) {
-            txt+='hypot'+ Math.hypot(3, 4, '5') + '#' + Math.hypot(3, 4);
+    document_getElementSafe = function (n, i, s, h) {
+        if(document_getElementById(i)){
+            return document_getElementById(i);
         }
+        var d = document_createElement(n, i, s, h);
+        _gba().appendChild(d);
+        return d;
+    }
 
-        return txt;
-
-    })()
-};
-
-
-/**
- * the EVILUATORS!!!!
- * @type {string[]}
- */
-var evilUators = [
-    'new File([],[])',
-    'new Image()', 'new Blob()',
-    'new AnimationEvent(1)',
-    'new WebKitCSSMatrix()',
-    'document.createElement(\'canvas\')',
-    'document.createElement(\'video\')',
-    'document.createElement(\'svg\')',
-    'document.createElement(\'rect\')',
-    'document.createElement(\'audio\')',
-    'Math',
-    'document.createElement(\'div\').style'
-];
+    $p = [],
+        
+    _mr = Math.round,
+    _mf = Math.floor,
+    json_parse = JSON.parse,
+        json_stringify = JSON.stringify
 
 
+    ;
 
-var line = [],  memodata = {};
+var $W, $bb, $K, $BN, $bV, javaEnabled;
 
-for(var i = 0; i < evilUators.length; i++) {
+for(var i = 0; i < $eU.length; i++) {
     try {
-        var evaluator = evilUators[i], result;
-        result = eval(evaluator);
-        props = objKeys(result);
-        for(var k = 0; k < props.length; k++) {
-            var currentKey = props[k];
-            if(line.indexOf(currentKey) < 0) {
-                line.push(currentKey);
+        var e = $eU[i], r;
+        r = eval(e);
+        p = _ok(r), k, c;
+        for(k = 0; k < p.length; k++) {
+            c = p[k];
+            if($eI.indexOf(c) < 0) {
+                $eI.push(c);
             }
         }
     } catch (e){
@@ -302,44 +379,41 @@ for(var i = 0; i < evilUators.length; i++) {
     }
 }
 
-fingerPrintData.registeredMethods += line.join('');
+$F.rm += $eI.join('');
 
-
-
-function getFingerPrintText() {
-    var text = '';
-    var obj = fingerPrintData; //use ovverideble data
-    for(var i in obj){
-        text += i + (obj[i]);
+function _ft() {
+    var t = '';
+    for(var i in $F){
+        t += i + ($F[i]);
     }
-    return text;
+    return t;
 }
 
 
 
-function getFingerprintIdentifier() {
-    var text = getFingerPrintText().split('');
-    var resp = '';
-    var lasnum = 2;
-    var alphas = [], nums = [], others = [];
-    var escapes = '_,{}[]\/-|=()+#.;'.split('');
-    var eObj = {};
-    for(var i = 0 ; i < escapes.length; i++) {
-        eObj[escapes[i]] = 2;  //TODO modify this
+function _fi() {
+    var text = _ft().split(''), 
+        resp = '', lasnum = 2,
+        alphas = [], nums = [], 
+        others = [], 
+        escapes = '_,{}[]\/-|=()+#.;'.split(''),
+        eObj = {},
+        cnt1 = 0, i = 0, c, mind;
+    for(i = 0 ; i < escapes.length; i++) {
+        eObj[escapes[i]] = 2;  /** TODO modify this **/
     }
-
-    var cnt1 = 0;
-    for(var i = 0; i < text.length; i++) {
-        var c = text[i];
-        if(c=== ' ' || c === '\n' || c === '\t') {
+    
+    for(i = 0; i < text.length; i++) {
+        c = text[i];
+        if(c === ' ' || c === '\n' || c === '\t') {
             continue;
         }
         if(escapes.indexOf(c) > -1) {
-            resp+=numberToString(eObj[c]);
+            resp+=_uat(eObj[c]);
             eObj[c]++;
             continue;
         }
-        if(isAlpha(c)) {
+        if(_uiac(c)) {
             if(i % 2 == 0) {
                 resp+=c;
             } else {
@@ -349,7 +423,7 @@ function getFingerprintIdentifier() {
             if(+c) {
                 lasnum = parseInt(c);
             }
-            var mind = Math.round(resp.length / lasnum);
+            mind = _mr(resp.length / lasnum);
             resp = resp.substring(0, mind) + c + resp.substring(mind, resp.length);
         }
     }
@@ -358,28 +432,23 @@ function getFingerprintIdentifier() {
 
 
 
-function getFingerprintNumbers(){
-    var text = getFingerPrintText().split(''), nums = '';
-
-    for( var i = text.length ; i > 0; i--){
-        var c = text[i];
+function _fn(){
+    var t = _ft().split(''), n = '';
+    for( var i = t.length ; i > 0; i--){
+        var c = t[i];
         if(+c || c === '0') {
-            nums+=c;
+            n+=c;
         }
     }
-    return nums;
+    return n;
 }
 
 
-
-function isValidFingerprintNumber(strdata) {
-    return strdata == '0' || strdata.length > 1;
-}function __isnodejs() {
-    return (typeof module !== 'undefined' && module.exports);
+function _fd() {
+    return $F;
 }
 
-
-function __getCaller(args){
+function _gmc(args){
     if(args && args.calee && args.callee.caller) {
         var fline =  args.callee.caller + '';
 
@@ -389,34 +458,29 @@ function __getCaller(args){
     return '';
 }
 
-function __isbrowser() {
-    return  (typeof  window != 'undefined');
-}
 
-var isBrowser = __isbrowser();
-
-function objKeys(obj) {
+function _ok(obj) {
     if(!obj){
         return [];
     }
-    var keys = [];
+    var k = [];
     for(var i in obj){
-        keys.push(i);
+        k.push(i);
     }
-    return keys;
+    return k;
 }
 
-function simplify(obj) {
+function _us(obj) {
     var r = {};
     for(var i in obj) {
-        if(isPrimitive(obj[i])) {
+        if(_uip(obj[i])) {
             r[i] = obj[i] + '';
         }
     }
     return r;
 }
 
-function serialize(obj, stackno,
+function _uss(obj, stackno,
                    zeroval, trueval, falseval,
                    functval, doubleQuotes, comma, twodots,
                    r1, r2, d1, d2, stackexit){
@@ -429,7 +493,7 @@ function serialize(obj, stackno,
         return zeroval;
     }
 
-    if(typeof obj === nrType) {
+    if(typeof obj === $N) {
         return ''+obj;
     }
     if(!obj) {
@@ -438,18 +502,18 @@ function serialize(obj, stackno,
     if(obj === true) {
         return trueval;
     }
-    if(isPrimitive(obj)) {
+    if(_uip(obj)) {
         return doubleQuotes + obj + doubleQuotes;
     }
 
-    if(isFunction(obj)) {
+    if(_uif(obj)) {
         return functval;
     }
 
-    if(isArray(obj)) {
+    if(_ia(obj)) {
         var r = r1;
         for(var i = 0; i < obj.length; i++) {
-            r += serialize(obj[i], stackno,
+            r += _uss(obj[i], stackno,
                 zeroval, trueval, falseval,
                 functval, doubleQuotes, comma, twodots,
                 r1, r2, d1, d2, stackexit);
@@ -466,11 +530,11 @@ function serialize(obj, stackno,
         return stackexit;
     }
 
-    var keys = objKeys(obj);
+    var keys = _ok(obj);
     var r = d1, n = 0;
     for (var j in obj) {
         n++;
-        var value = serialize(obj[j], stackno -1,
+        var value = _uss(obj[j], stackno -1,
             zeroval, trueval, falseval,
             functval, doubleQuotes, comma, twodots,
             r1, r2, d1, d2, stackexit);
@@ -486,86 +550,74 @@ function serialize(obj, stackno,
 }
 
 
-function encodeObject(obj, stackno) {
-    return serialize(obj, stackno, '','','','','','','','','','','','','');
+function _eo(obj, stackno) {
+    return _uss(obj, stackno, '','','','','','','','','','','','','');
 }
 
 
-function stringify(obj, stackno) {
-    return serialize(obj, stackno, 0, 'true', 'false', '"[funct]"', '"', ',', ':', '[', ']', '{', '}', '[stack]');
+function _usa(obj, stackno) {
+    return _uss(obj, stackno, 0, 'true', 'false', '"[funct]"', '"', ',', ':', '[', ']', '{', '}', '[stack]');
 }
 
 
+function util_array_each(a, c){
+    for(var i = 0; i < a.length; i++){
+        c(i, a[i])
+    }
+}
 
-/**
- * TODO for nodejs
- * @returns {*|{}}
- */
-function getPerformance(){
+function util_obj_each(o, c){
+    for(var i in o){
+        c(i, o[i]);
+    }
+}
+
+function _sgp(){
     return window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
 }
 
 
-function isPrimitive(d){
-    return (typeof d === strType || typeof d === nrType || typeof d === boolType);
-}
-
-/**
- * TODO improve this
- * @param d
- * @returns {boolean}
- */
-function isFunction(d){
-    return typeof d === fncType;
+function _uip(d){
+    return (typeof d === $S || typeof d === $N || typeof d === $B);
 }
 
 
-/**
- * TODO improve this
- * @param d
- * @returns {boolean}
- */
-function isArray(d){
+function _uif(d){
+    return typeof d === $F;
+}
+
+function _ia(d){
     return Array.isArray(d);
 }
 
-function getFingerPrintData() {
-    return fingerPrintData;
+function _uiac(c){
+    return $A.indexOf(c) > -1;
 }
 
-function isAlpha(c){
-    return alphabet.indexOf(c) > -1;
-}
-
-function numberToString(numval, strlist, zval) {
-
-
-
+function _uat(numval, strlist, zval) {
+    
     if(!zval) {
         zval = 0;
     }
 
     if(!strlist) {
-        strlist = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        strlist = $A;
     }
 
-    if(isPrimitive(strlist)){
+    if(_uip(strlist)){
         strlist = strlist.split('');
     }
 
-
-
-
-
+    
     var response, pid = numval + '' + strlist.join('') + zval+'';
-    if(memodata[pid]) {
-        return memodata[pid];
+    if(_uat_memodata[pid]) {
+        return _uat_memodata[pid];
     }
 
 
     if(strlist.length === 1) {
         response = new Array(numval.length).join(strlist[0]);
-        memodata[pid] = response;
+        _uat_memodata[pid] = response;
         return response;
     }
 
@@ -581,8 +633,8 @@ function numberToString(numval, strlist, zval) {
 
 
         if(rest) {
-            response = strlist[zval] + numberToString(rest, strlist, zval+1);
-            memodata[pid] = response
+            response = strlist[zval] + _uat(rest, strlist, zval+1);
+            _uat_memodata[pid] = response;
             return response;
         } else {
             return strlist[zval];
@@ -596,14 +648,14 @@ function numberToString(numval, strlist, zval) {
         rest = numval.substring(1, numval.length);
 
         if(+response) {
-            response = numberToString(response, strlist, zval);
+            response = _uat(response, strlist, zval);
         }
 
         if(rest) {
-            rest = numberToString(rest, strlist, zval);
+            rest = _uat(rest, strlist, zval);
             response+=rest;
         }
-        memodata[pid] = response;
+        _uat_memodata[pid] = response;
         return response;
     }
 
@@ -615,27 +667,27 @@ function numberToString(numval, strlist, zval) {
     if(varFloat < strlist.length) {
         if(varFloat % 1 == 0) {
             response = strlist[parseInt(varFloat)];
-            memodata[pid] = response;
+            _uat_memodata[pid] = response;
             return response;
         } else {
             var rest = varFloat % 1;
             if(rest < 1) {
                 rest *= 10;
             }
-            response = numberToString(Math.floor(varFloat), strlist, zval) + numberToString(rest, strlist, zval);
-            memodata[pid] = response;
+            response = _uat(_mf(varFloat), strlist, zval) + _uat(rest, strlist, zval);
+            _uat_memodata[pid] = response;
             return response;
         }
     }
     if(varFloat % 1 == 0) {
         if(varFloat < 10) {
-            response = numberToString(1, strlist, zval ) + numberToString(varFloat - 1, strlist, zval);
-            memodata[pid] = response;
+            response = _uat(1, strlist, zval ) + _uat(varFloat - 1, strlist, zval);
+            _uat_memodata[pid] = response;
             return response;
 
         }
-        response = numberToString(Math.floor(varFloat / 10), strlist, zval ) + numberToString(varFloat % 10, strlist, zval);
-        memodata[pid] = response;
+        response = _uat(_mf(varFloat / 10), strlist, zval ) + _uat(varFloat % 10, strlist, zval);
+        _uat_memodata[pid] = response;
 
         return response;
     }
@@ -644,49 +696,108 @@ function numberToString(numval, strlist, zval) {
     if(rest < 1) {
         rest*=10;
     }
-    response = numberToString(Math.floor(varFloat), strlist, zval) + numberToString(rest, strlist, zval);
-    memodata[pid] = response;
+    response = _uat(_mf(varFloat), strlist, zval) + _uat(rest, strlist, zval);
+    _uat_memodata[pid] = response;
     return response;
 }
 
 
-function stringToHex(integer) {
+function _shx(integer) {
     var str = parseInt(integer).toString(16);
     return str.length === 1 ? '0' + str : str;
 }
 
 
-function rgbToHex(r, g, b) {
-    return '#' + stringToHex(r) + stringToHex(g) + stringToHex(b);
+function _rtx(r, g, b) {
+    return '#' + _shx(r) + _shx(g) + _shx(b);
 }
 
 
-function rgbToHexShift(r, g, b) {
+function _rtxShift(r, g, b) {
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
 
-
-
-
-var registeredEvents = {}, eventDispatchers = {},
-browserWindow = (function(){
-    if(typeof window != 'undefined'){
-        return window;
+function util_dom_id(p) {
+    if(p){
+        return util_random_string() +  p + util_incr();
     }
-    return {};
-})(),
-browserDocument = (function(){
-    if(typeof window != 'undefined' && typeof document != 'undefined'){
-        return document;
+    return util_random_string() +  util_incr();
+}
+
+
+function util_aton(i, s){
+    if(+i){
+       return i;
     }
-    return {};
-})();
+
+    var p = (i+'').split(''), r = '';
+    util_array_each(i, function(j, o) {
+
+
+        if(s && j > 0){
+            r+=s;
+        }
+
+        if(string_characters.indexOf(o) > -1){
+            r+=string_characters.indexOf(o) + 1;
+        }
+        else  if(+o){
+            r+=o;
+        }
+        else {
+            r+= util_incr();
+        }
+    });
+
+    return r;
+}
 
 
 
+function time_interval(n, s) {
+    switch(s+''.toLowerCase()) {
+        case 'nano':
+            return n;
+        case 'seconds':
+        case 'second':
+            return n * 1000;
+        case 'minutes':
+        case 'minute':
+            return n * time_interval(60, 'seconds');
+        case 'hour':
+        case 'hours':
+              return n * time_interval(60, 'minute');
+        case 'day':
+        case 'days':
+            return n * time_interval(24, 'hour');
+        case 'month':
+        case 'months':
+              return n * time_interval(30, 'day');
+        case 'year':
+        case 'years':
+              return n * time_interval(365, 'day');
 
-function dispatch(eventName) {
+    }
+
+    return 0;
+}
+
+
+function time_date_add(d, n, s){
+    if(d.getTime && d.setTime){
+        d.setTime(d.getTime() + time_interval(n, s));
+    }
+    return d;
+}
+
+function time_date_roll(d, n, s){
+    if(d.getTime && d.setTime){
+        d.setTime(d.getTime() - time_interval(n, s));
+    }
+    return d;
+}
+function _ed(eventName) {
     if (!eventDispatchers[eventName]) {
         eventDispatchers[eventName] = 1;
     } else {
@@ -767,14 +878,14 @@ function removeEventListener(eventName, uidName) {
 }
 
 
-function removeAnimationFrame(id) {
-    if(!id){
+function removeAnimationFrame(i) {
+    if(!i){
         return false;
     }
-    if (browserWindow.cancelAnimationFrame) {
-        browserWindow.cancelAnimationFrame(id);
+    if ($bw.cancelAnimationFrame) {
+        $bw.cancelAnimationFrame(i);
     } else {
-        clearTimeout(id);
+        clearTimeout(i);
     }
     return true;
 }
@@ -787,25 +898,29 @@ function requestAnimationFrame(callback, delay) {
     if(!delay){
         delay = 30;
     }
-    if(browserWindow.requestAnimationFrame){
+    if($bw.requestAnimationFrame){
         type = 'requestAnimationFrame';
-        timeoutId = browserWindow.requestAnimationFrame(callback);
+        timeoutId = $bw.requestAnimationFrame(callback);
     }
-    else if(browserWindow.mozRequestAnimationFrame){
+    else if($bw.mozRequestAnimationFrame){
         type = 'mozRequestAnimationFrame';
-        timeoutId = browserWindow.mozRequestAnimationFrame(callback);
+        timeoutId = $bw.mozRequestAnimationFrame(callback);
     }
-    else if(browserWindow.msRequestAnimationFrame){
+    else if($bw.msRequestAnimationFrame){
         type = 'msRequestAnimationFrame';
-        timeoutId = browserWindow.msRequestAnimationFrame(callback);
+        timeoutId = $bw.msRequestAnimationFrame(callback);
     }
-    else if(browserWindow.webkitRequestAnimationFrame){
+    else if($bw.webkitRequestAnimationFrame){
         type = 'webkitRequestAnimationFrame';
-        timeoutId = browserWindow.webkitRequestAnimationFrame(callback);
+        timeoutId = $bw.webkitRequestAnimationFrame(callback);
     }
-    else if(browserWindow.oRequestAnimationFrame){
+    else if($bw.oRequestAnimationFrame){
         type = 'oRequestAnimationFrame';
-        timeoutId = browserWindow.oRequestAnimationFrame(callback);
+        timeoutId = $bw.oRequestAnimationFrame(callback);
+    }
+    else if(typeof setImmediate != 'undefined'){
+        timeoutId = setImmediate(callback, 30);
+        type = 'setImmediate';
     }
     else if(typeof setTimeout != 'undefined'){
         timeoutId = setTimeout(callback, 30);
@@ -815,7 +930,7 @@ function requestAnimationFrame(callback, delay) {
         callback();
     }
 
-    dispatch('quixot_event_appointment_done');
+    _ed('quixot_event_appointment_done');
 
     return {
         type: type,
@@ -831,54 +946,54 @@ function getAllEvents() {
     }
 }var webGL = false;
 
-if (browserDocument.createElement) {
+if ($bd.createElement) {
     try {
-        var canvas = browserDocument.createElement('canvas');
+        var canvas = $bd.createElement('canvas');
 
         if(canvas.getContext('webgl')) {
-            fingerPrintData.webgctx = 'webgl';
+            $F.webgctx = 'webgl';
         } else if (canvas.getContext('experimental-webgl')){
-            fingerPrintData.webgctx = 'experimental-webgl';
+            $F.webgctx = 'experimental-webgl';
         }
 
         try {
-            fingerPrintData.canvasData = canvas.toDataURL("image/jpeg")+'';
-            fingerPrintData.canvasDataPNG = canvas.toDataURL();
+            $F.canvasData = canvas.toDataURL("image/jpeg")+'';
+            $F.canvasDataPNG = canvas.toDataURL();
         }catch (e) {
-            fingerPrintData.canvasData = 'np';
+            $F.canvasData = 'np';
         }
 
-        webGL =  (!!browserWindow.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl') ) );
+        webGL =  (!!$bw.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl') ) );
 
         if(webGL) {
             try {
 
 
                 var dbgRenderInfo = webGL.getExtension("WEBGL_debug_renderer_info");
-                fingerPrintData.glURWG  =
+                $F.glURWG  =
                     webGL.getParameter(dbgRenderInfo.UNMASKED_RENDERER_WEBGL);
 
-                fingerPrintData.glUVGL  =
+                $F.glUVGL  =
                     webGL.getParameter(dbgRenderInfo.UNMASKED_VENDOR_WEBGL);
 
-                fingerPrintData.glVR  =
+                $F.glVR  =
                     webGL.getParameter(webGL.VERSION);
 
-                fingerPrintData.glSLV  =
+                $F.glSLV  =
                     webGL.getParameter(webGL.SHADING_LANGUAGE_VERSION);
-                fingerPrintData.glVND  =
+                $F.glVND  =
                     webGL.getParameter(webGL.VENDOR);
 
 
-                fingerPrintData.registeredMethods+=objKeys(webGL).join('');
+                $F.rm+=_ok(webGL).join('');
             } catch (e) {
-                fingerPrintData._errs.push(e+'');
+                $F._errs.push(e+'');
             }
         }
 
 
     } catch(e) {
-        fingerPrintData._errs.push(e+'');
+        $F._errs.push(e+'');
         webGL = false;
     }
 
@@ -888,11 +1003,11 @@ var requirememo = {};
 
 
 function __require(modulename) {
-    if (__isnodejs()) {
+    if ($en) {
         if (requirememo[modulename]) {
             return requirememo[modulename];
         }
-        defaultLoggerInstance.info(modulename);
+        $ldi.info(modulename);
         requirememo[modulename] = require(modulename);
         return requirememo[modulename];
     }
@@ -908,6 +1023,9 @@ function __require(modulename) {
             },
             writeFileSync: function () {
 
+            },
+            readFileSync: function () {
+                
             }
         }
     }
@@ -915,13 +1033,15 @@ function __require(modulename) {
     return {}
 }
 
-//TODO suport unescape...
-function _decodeURIString(strd) {
+/**
+ * TODO suport unescape...
+ */
+function _udURI(strd) {
     return decodeURIComponent(strd)
 }
 
 
-function getValFromHttpParam(val) {
+function url_getValFromHttpParam(val) {
     if(val.indexOf && val.indexOf(',') > -1) {
         return (val+'').split(',')
     }
@@ -931,7 +1051,7 @@ function getValFromHttpParam(val) {
 
     var obj =null;
     try {
-        obj = JSON.parse(_decodeURIString(val));
+        obj = json_parse(_udURI(val));
     } catch (ex){
         obj = null;
     } finally {
@@ -945,7 +1065,7 @@ function getValFromHttpParam(val) {
 
 
 
-function url_decode(url){
+function _ud(url){
     if (!url) {
         return null;
     }
@@ -966,7 +1086,6 @@ function url_decode(url){
         lastPage = arr[0];
 
     if(arr.length > 1) {
-        // console.log(arr);
         var last = arr[1];
         var parts = last.split('&');
 
@@ -974,7 +1093,7 @@ function url_decode(url){
             for (var i = 0; i < parts.length; i++) {
                 var keyVal = parts[i].split('=');
                 if (keyVal.length > 1) {
-                    response[keyVal[0]] = getValFromHttpParam(keyVal[1]);
+                    response[keyVal[0]] = url_getValFromHttpParam(keyVal[1]);
                 } else {
                     response[keyVal[0]] = false;
                 }
@@ -993,7 +1112,7 @@ function url_decode(url){
 
 
 
-function url_current_params() {
+function _ucp() {
     if(typeof document != 'undefined'){
         return url_get_params(document.URL);
     }
@@ -1012,13 +1131,13 @@ function url_current_search() {
 
 
 function url_get_params(url) {
-    return url_decode(url).params;
+    return _ud(url).params;
 }
 
 
 
 function url_getDomainFromUrl(url){
-    url = url + ''; //to avoid indexOf failing
+    url = url + '';
     var domain = (url.indexOf('://') > -1) ? url.split('/')[2] : url.split('/')[0];
     if(domain){
         return domain.split(':')[0];
@@ -1027,28 +1146,25 @@ function url_getDomainFromUrl(url){
 }
 
 function url_currentDomain() {
-    if(typeof document != 'undefined') {
-        if(document.domain){
-            return document.domain;
-        }
-        if(document.URL){
-            return url_getDomainFromUrl(document.URL);
-        }
+    if($bd.domain){
+        return $bd.domain;
+    }
+    if($bd.URL){
+        return url_getDomainFromUrl($bd.URL);
     }
     return 'localhost';
 }
 
 
 function url_current_path() {
-    if(typeof  window != 'undefined' && window.location && window.location.pathname){
-        return window.location.pathname
+    if($bw.location && $bw.location.pathname){
+        return $bw.location.pathname
     }
     return '';
 }
 
 function url_querify(object) {
-    var cont = [];
-    var text = '';
+    var cont = [], text = '';
     if (object != null){
         for (var i in object) {
             if(i && object[i]){
@@ -1069,51 +1185,62 @@ function url_querify(object) {
 }
 
 
+    function _ldda(n, l, d) {
+        if(!$eb){
+            return;
+        }
+        var v, i= 'qfa', dc = document, r = ' (<i><b>' + n + '</b></i> : ' + d.timestamp + ')';
+        v = document_getElementSafe('div', 'qfa', {
+            border: '1px solid black',
+            margin : '2%',
+            padding : '1%'
+        }, '<button onclick="document.getElementById(\''+i+'\').style.display=\'none\'">close</button>');
+        var t = '<span style="display:block;color:';
+        switch (l){
+            case 'warn':
+                t+='orange';
+                break;
+            case 'error':
+                t+='red';
+                r+='<span style="display: block;">'+d.stack.join('<br />') + '</span>';
+                break;
+            case 'info':
+                t+='green';
+                break;
+
+            default:
+                t+='black';
+        }
+        t+='"> <b style="margin-right: 2px">' + json_stringify(d.message) + '</b>' + r + '</span>';
+        v.innerHTML += t;
+    }
+
 
 
 
     var logger_defaultConfiguration = {
          consoleAppender: true,
          consoleFormatter: function (name, level, data) {
-                if(!__isbrowser()){
-                    console.log(' [ ' + name + '.'+level + ' '+ data.message + ' ]');
+                if(!$eb){
+                    console.log(' [ ' + name + '.'+level + ' '+ json_stringify(data.message) + ' ]');
                     return;
                 }
 
              if(level === 'error'){
-                 console.error(name + '.'+level + ' '+ data.message, data);
+                 console.error(name + '.'+level , data.message, data.timestamp);
              }
              else if(level === 'warn'){
-                 console.warn(name + '.'+level + ' '+ data.message, data);
+                 console.warn(name + '.'+level , data.message, data.timestamp);
              }
              else {
-
-                     console.log(name + '.'+level + ' '+ data.message, data);
-
-
+                 console.log(name + '.'+level , data.message, data.timestamp);
              }
 
 
          },
          fileAppender: true, //TODO for nodejs a model {file: path, level: level}  //  domAppender: false, //{qlog = ?|ALL, level=??|ALL, domPattern: 'String' }
 
-         fileFormatter: function (name, level, data) {
-                if(typeof window != 'undefined'){
-                    if(window.document&& window.document.body){
-                        var div, idn= 'quixotFileAppender';
-                        if(document.getElementById(idn)){
-                            div = document.getElementById(idn);
-                        } else {
-                            div = document.createElement('pre');
-                            div.id = idn;
-                            document.body.appendChild(div);
-
-                        }
-                        var txt = name+' '+level+' '+data.timestamp+ ' ' + data.message + '\t' + JSON.stringify(data)+ '\n';
-                        div.innerHTML += txt;
-                    }
-                }
-         },
+         fileFormatter: _ldda,
 
          logStack: true
     }
@@ -1126,7 +1253,7 @@ function url_querify(object) {
 
     function logger_getConfigFromUrl() {
         if(logger_options_key){
-            return url_current_params()[logger_options_key];
+            return _ucp()[logger_options_key];
         }
 
         return null;
@@ -1244,10 +1371,10 @@ function url_querify(object) {
     }
 
 
-    var defaultLoggerInstance = new LogInstance('quixot', logger_defaultConfiguration);
-
-    var logger_container = {
-        'quixot': defaultLoggerInstance
+    var $ldi = new LogInstance('quixot', logger_defaultConfiguration),
+        
+    logger_container = {
+        'quixot': $ldi
     };
 
     function logger_getInstance(instancename, config) {
@@ -1354,8 +1481,8 @@ function url_querify(object) {
    
  var envData = {
     jsEngine: {
-        isNodeJs: __isnodejs(),
-        isBrowser: isBrowser
+        isNodeJs: $en,
+        isBrowser: $eb
     },
     javaEnabled: false,
     tempDir: '',
@@ -1366,7 +1493,7 @@ function url_querify(object) {
 if(typeof process != 'undefined' && process.env){
     for(var i in process.env){
         envData[i] = process.env[i];
-        fingerPrintData['process_env' + i] = process.env[i];
+        $F['process_env' + i] = process.env[i];
     }
     var p = __require('path');
     envData.homeDir = (process.env.HOME || process.env.USERPROFILE);
@@ -1408,31 +1535,29 @@ var system_battery = (function () {
 screen_info = (function () {
 
     var width, height, availWidth, availHeight, colorDepth, pixelDepth;
-
-
-            if (typeof window != 'undefined' && window.screen) {
-                if(window.screen.width) {
-                    width = window.screen.width;
+            if ($bw.screen) {
+                if($bw.screen.width) {
+                    width = $bw.screen.width;
                 }
 
-                if(window.screen.height) {
-                    height = window.screen.height;
+                if($bw.screen.height) {
+                    height = $bw.screen.height;
                 }
 
-                if(window.screen.availHeight) {
-                    availHeight = window.screen.availHeight;
+                if($bw.screen.availHeight) {
+                    availHeight = $bw.screen.availHeight;
                 }
 
-                if(window.screen.availWidth	) {
-                    availWidth = window.screen.availWidth	;
+                if($bw.screen.availWidth	) {
+                    availWidth = $bw.screen.availWidth	;
                 }
 
-                if(window.screen.colorDepth	) {
-                    colorDepth	= window.screen.colorDepth	;
+                if($bw.screen.colorDepth	) {
+                    colorDepth	= $bw.screen.colorDepth	;
                 }
 
-                if(window.screen.pixelDepth	) {
-                    pixelDepth	 = window.screen.pixelDepth	;
+                if($bw.screen.pixelDepth	) {
+                    pixelDepth	 = $bw.screen.pixelDepth	;
                 }
             }
 
@@ -1455,7 +1580,7 @@ os_info = (function () {
         }
     }
 
-    if(__isnodejs()){
+    if($en){
 
         var nos = __require('os');
         console.log(nos);
@@ -1465,7 +1590,8 @@ os_info = (function () {
         }
     }
     return {}
-})()
+})();
+
     function getCacheNamed(name) {
         var data = getNodeJsCache();
         if(data[name]){
@@ -1491,7 +1617,7 @@ os_info = (function () {
         var path = getCachePath(), fs = __require('fs');
         var line = fs.readFileSync(path, "utf8");
         var oldData = JSON.parse(line);
-        if(newdata){
+        if(oldData && newdata){
             var props = 0;
             for(var i in newdata){
                 oldData[i] = newdata[i];
@@ -1499,7 +1625,6 @@ os_info = (function () {
             }
 
             if(props > 0){
-
                 console.log('saving' + JSON.stringify(oldData));
                 fs.writeFileSync(path, JSON.stringify(oldData));
             }
@@ -1531,21 +1656,26 @@ os_info = (function () {
     }
 
 
-    function CacheInstance(paramname) {
+    function CacheInstance(paramname, _lifetime) {
         var name = 'qch' + (paramname+'');
-        name = name.replace(/\?/g, 'î')
-            .replace(/=/g, 'ă')
-            .replace(/\//g, 'ț')
-            .replace(/\./g, '₤')
+        name = name.replace(/\?/g, '')
+            .replace(/=/g, '')
+            .replace(/\//g, '')
+            .replace(/\./g, '')
         ;
 
 
 
         var data = (function () {
             var r;
-            if(isBrowser) {
+            if($eb) {
+
                 if(typeof localStorage != 'undefined') {
-                    r = localStorage.getItem(name);
+                    try {
+                        r = localStorage.getItem(name);
+                    }catch (e){
+                        r = null;
+                    }
                 }
                 if(!r) {
                     r = getCookie(name);
@@ -1582,7 +1712,7 @@ os_info = (function () {
         this.remove = function (slot) {
             if(data) {
                delete data[slot];
-               if(!isBrowser){
+               if(!$eb){
                    removeNodeJsCache(name, slot);
                } else{
                    this.save();
@@ -1596,14 +1726,19 @@ os_info = (function () {
             if(!data) {
                 return;
             }
-            if(isBrowser) {
+            if($eb) {
                 clearTimeout(saveTimeoutId);
 
                 if(typeof localStorage != 'undefined') {
-                    localStorage.setItem(name, JSON.stringify(data));
-                }
-                setCookie(name, JSON.stringify(data));
 
+                    try {
+                         localStorage.setItem(name, JSON.stringify(data));
+                    } catch(ex) {
+                        setCookie(name, JSON.stringify(data));
+                    }
+                } else {
+                    setCookie(name, JSON.stringify(data));
+                }
                 saveTimeoutId = setTimeout(function () {
                     getCacheInstance(paramname).save();
                 }, 1000 * 10);
@@ -1656,81 +1791,54 @@ os_info = (function () {
     };
 
 
-function getCacheInstance(instancename) {
-                if(!cacheContainer[instancename]) {
-                    cacheContainer[instancename] = new CacheInstance(instancename);
-                }
-                return cacheContainer[instancename];
+function getCacheInstance(_instanceName, _lifetime) {
+        if(!cacheContainer[_instanceName]) {
+            cacheContainer[_instanceName] = new CacheInstance(_instanceName, _lifetime);
+        }
+        return cacheContainer[_instanceName];
 }
 
 
 
-    function getWindow() {
-        if(typeof window != 'undefined') {
-            return window;
-        }
-        return {};
-    }
 
-    function getNavigator() {
-        if(typeof navigator != 'undefined') {
-            return navigator;
-        }
 
-        return getWindow().navigator || {};
-    }
+    var browser_searched_data = [
+        {s: $bu, u: 'iCab', v: 'iCab', i: 'iCab'},
+        {s: $bu, u: 'rekonq', v: 'rekonq', i: 'Rekonq'},
+        {s: $bu, u: 'Midori', v: 'Midori', i: 'Midori'},
+        {s: $bu, u: 'Arora', v: 'Arora', i: 'Arora'},
+        {s: $bu, u: 'Stainless', v: 'Stainless', i: 'Stainless'},
+        {s: $bu, u: 'Epiphany',v: 'Epiphany', i: 'Epiphany'},
+        {s: $bu, u: 'K-Meleon', v: 'K-Meleon', i: 'K-Meleon'},
+        {s: $bn.vendor, u: 'Camino', i: 'Camino'},
+        {s: $bu, u: 'Maxthon', v: 'Maxthon', i: 'Maxthon'},
+        {s: $bu, u: 'SeaMonkey', v: 'SeaMonkey', i: 'SeaMonkey'},
+        {s: $bu, u: 'Edge', i: 'Edge', v: 'Edge'},
 
-    function getChrome() {
-            return getWindow().chrome;
-    }
+        {s: $bu, u: 'Chrome', i: 'Chrome'},
+        {s: $bu, u: 'OmniWeb', v: 'OmniWeb/', i: 'OmniWeb'},
+        {s: $bn.vendor, u: 'Apple', i: 'Safari', v: 'Version'},
+        {prop: $bw.opera, i: 'Opera', v: 'Version'},
+        {s: $bn.vendor, u: 'KDE', i: 'Konqueror'},
+        {s: $bu, u: 'Firefox', i: 'Firefox'},
+        {s: $bu, u: 'Netscape', i: 'Netscape'},
+        {s: $bu, u: 'MSIE', i: 'Explorer', v: 'MSIE'},
+        {s: $bu, u: 'Gecko', i: 'Mozilla', v: 'rv'},
 
-    function getNetscape() {
-        return getWindow().netscape;
-    }
-
-    function getAppVersion() {
-        return getNavigator().appVersion || {};
-    }
-
-    function getUserAgent() {
-        return getNavigator().userAgent || ' ';
-    }
-
-    var dataBrowser = [
-        {string: getUserAgent(), subString: 'iCab', versionSearch: 'iCab', identity: 'iCab'},
-        {string: getUserAgent(), subString: 'rekonq', versionSearch: 'rekonq', identity: 'Rekonq'},
-        {string: getUserAgent(), subString: 'Midori', versionSearch: 'Midori', identity: 'Midori'},
-        {string: getUserAgent(), subString: 'Arora', versionSearch: 'Arora', identity: 'Arora'},
-        {string: getUserAgent(), subString: 'Stainless', versionSearch: 'Stainless', identity: 'Stainless'},
-        {string: getUserAgent(), subString: 'Epiphany',versionSearch: 'Epiphany', identity: 'Epiphany'},
-        {string: getUserAgent(), subString: 'K-Meleon', versionSearch: 'K-Meleon', identity: 'K-Meleon'},
-        {string: getNavigator().vendor, subString: 'Camino', identity: 'Camino'},
-        {string: getUserAgent(), subString: 'Maxthon', versionSearch: 'Maxthon', identity: 'Maxthon'},
-        {string: getUserAgent(), subString: 'SeaMonkey', versionSearch: 'SeaMonkey', identity: 'SeaMonkey'},
-        {string: getUserAgent(), subString: 'Edge', identity: 'Edge', versionSearch: 'Edge'},
-
-        {string: getUserAgent(), subString: 'Chrome', identity: 'Chrome'},
-        {string: getUserAgent(), subString: 'OmniWeb', versionSearch: 'OmniWeb/', identity: 'OmniWeb'},
-        {string: getNavigator().vendor, subString: 'Apple', identity: 'Safari', versionSearch: 'Version'},
-        {prop: getWindow().opera, identity: 'Opera', versionSearch: 'Version'},
-        {string: getNavigator().vendor, subString: 'iCab', identity: 'iCab'},
-        {string: getNavigator().vendor, subString: 'KDE', identity: 'Konqueror'},
-        {string: getUserAgent(), subString: 'Firefox', identity: 'Firefox'},
-        {string: getUserAgent(), subString: 'Netscape', identity: 'Netscape'},
-        {string: getUserAgent(), subString: 'MSIE', identity: 'Explorer', versionSearch: 'MSIE'},
-        {string: getUserAgent(), subString: 'Gecko', identity: 'Mozilla', versionSearch: 'rv'},
-        // for older Netscapes (4-)
-        {string: getUserAgent(), subString: 'Mozilla', identity: 'Netscape', versionSearch: 'Mozilla'}
+        /**
+         * for older netscapes:(4-)
+         */
+        {s: $bu, u: 'Mozilla', i: 'Netscape', v: 'Mozilla'}
     ];
 
 
-    var dataOS = [
-        {string: getNavigator().platform, subString: 'Win', identity: 'Windows'},
-        {string: getNavigator().platform, subString: 'Mac', identity: 'Mac'},
-        {string: getUserAgent(), subString: 'iPhone', identity: 'iPhone'},
-        {string: getUserAgent(), subString: 'iPad', identity: 'iPad'},
-        {string: getUserAgent(), subString: 'Android', identity: 'Android'},
-        {string: getNavigator().platform, subString: 'Linux', identity: 'Linux'}
+    var browser_searched_os = [
+        {s: $bn.platform, u: 'Win', i: 'Windows'},
+        {s: $bn.platform, u: 'Mac', i: 'Mac'},
+        {s: $bu, u: 'iPhone', i: 'iPhone'},
+        {s: $bu, u: 'iPad', i: 'iPad'},
+        {s: $bu, u: 'Android', i: 'Android'},
+        {s: $bn.platform, u: 'Linux', i: 'Linux'}
     ];
 
 
@@ -1738,22 +1846,22 @@ function getCacheInstance(instancename) {
     
 
 
-    var versionStringToSearch = '';
+  
     function searchString(data) {
         for (var i = 0; i < data.length; i++) {
-            var dataString = data[i].string;
+            var dataString = data[i].s;
             if(!dataString) {
                 continue;
             }
             var dataProp = data[i].prop;
-            versionStringToSearch = data[i].versionSearch || data[i].identity;
+            $bb = data[i].v || data[i].i;
             if (dataString) {
-                if (dataString.indexOf(data[i].subString) != -1) {
-                    return (data[i].identity);
+                if (dataString.indexOf(data[i].u) != -1) {
+                    return (data[i].i);
                 }
             }
             else if (dataProp) {
-                return ( data[i].identity);
+                return ( data[i].i);
             }
         }
     }
@@ -1762,143 +1870,166 @@ function getCacheInstance(instancename) {
         if(!dataString || !dataString.indexOf) {
             return '';
         }
-        var index = dataString.indexOf(versionStringToSearch);
+        var index = dataString.indexOf($bb);
         if (index === -1) {
             return;
         }
-        return parseFloat(dataString.substring(index + versionStringToSearch.length + 1));
+        return parseFloat(dataString.substring(index + $bb.length + 1));
     }
 
-    var operatingSystem, operatingSystemSub, browserName, browserVersion, javaEnabled = false, pluginsList = [];
 
-    function scand(object) {
-        if(!object) {
+
+    function fingerprint_scan(o) {
+        if(!o) {
             return;
         }
-        for(var i in object){
-            var id = (i+object[i]);
-            if(pluginsList.indexOf(id) == -1) {
-                pluginsList.push(id);
-                scand(object[i]);
+        for(var i in o){
+            var id = (i+o[i]);
+            if($p.indexOf(id) == -1) {
+                $p.push(id);
+                fingerprint_scan(o[i]);
             }
         }
     }
 
 
-    operatingSystem = searchString(dataOS) || 'an unknown OS';
+    $W = searchString(browser_searched_os) || 'an unknown OS';
 
-    if (operatingSystem === 'Linux') {  //check for specific linux flavours
-        if(getUserAgent().toLowerCase().indexOf('ubuntu')) {
-            operatingSystemSub = 'Ubuntu';
+    if ($W === 'Linux') {  //check for specific linux flavours
+        if($bu.toLowerCase().indexOf('ubuntu')) {
+            $K = 'Ubuntu';
         }
     }
 
-    if(operatingSystem === 'Windows') {    //check for specific windows flavours
-        if (/Win(?:dows )?([^do]{2})\s?(\d+\.\d+)?/.test(getUserAgent())){
+    if($W === 'Windows') {    //check for specific windows flavours
+        if (/Win(?:dows )?([^do]{2})\s?(\d+\.\d+)?/.test($bu)){
             if (RegExp["$1"] == "NT"){
                 switch(RegExp["$2"]){
                     case "5.0":
-                        operatingSystemSub= "2000";
+                        $K= "2000";
                         break;
                     case "5.1":
-                        operatingSystemSub = "XP";
+                        $K = "XP";
                         break;
                     case "6.0":
-                        operatingSystemSub = "Vista";
+                        $K = "Vista";
                         break;
                     default:
-                        operatingSystemSub = "NT";
+                        $K = "NT";
                         break;
                 }
             } else if (RegExp["$1"] == "9x"){
-                operatingSystemSub = "ME";
+                $K = "ME";
             } else {
-                operatingSystemSub = RegExp["$1"];
+                $K = RegExp["$1"];
             }
         }
     }
 
-    browserName = searchString(dataBrowser) || 'An unknown browser';
-    browserVersion = searchVersion(getUserAgent()) || searchVersion(getAppVersion()) || 'an unknown version';
+    $BN = searchString(browser_searched_data) || 'An unknown browser';
+    $bV = searchVersion($bu) || searchVersion($bv) || 'an unknown version';
 
     //check for ie11 number
-    var isAtLeastIE11 = !!(getUserAgent().match(/Trident/) && !getUserAgent().match(/MSIE/));
+    var isAtLeastIE11 = !!($bu.match(/Trident/) && !$bu.match(/MSIE/));
     if (isAtLeastIE11) {
-        browserName = 'Explorer';
-        var isIE11 = !!(getUserAgent().match(/Trident/) && getUserAgent().match(/11/));
+        $BN = 'Explorer';
+        var isIE11 = !!($bu.match(/Trident/) && $bu.match(/11/));
         if (isIE11) {
-            browserVersion = 11;
+            $bV = 11;
         }
     }
 
     //fix number for some chrome versions and detect chromium
-    if (browserName === 'Chrome') {
-        if (getUserAgent().toLowerCase().indexOf('chromium') > -1) {
-            browserName = 'Chromium';
+    if ($BN === 'Chrome') {
+        if ($bu.toLowerCase().indexOf('chromium') > -1) {
+            $BN = 'Chromium';
         }
-        if(browserVersion === 'an unknown version') {
-            var version = getUserAgent() || getAppVersion();
+        if($bV === 'an unknown version') {
+            var version = $bu || $bv;
             version = version.split('Chrome');
             if (version[1]) {
                 var matches = version[1].match(/\d+/);
                 if (matches[0]) {
-                    browserVersion = parseInt(matches[0]);
+                    $bV = parseInt(matches[0]);
                 }
             }
         }
     }
 
 
+    function util_extract_first_number(s){
+
+        if(!s || s === ''){
+            return 0;
+        }
+
+
+        var r = '', s = s.trim().split('');
+        for(var i = 0; i < s.length; i++) {
+            if(!isNaN(s[i]) || s[i] === '.') {
+                r+=s[i];
+
+            }
+            if(s[i] === ' ') {
+                return r;
+            }
+        }
+        return r;
+    }
+
+    function browser_get_version_from_useragent(s){
+        var p = $bu.split(s);
+        if(p[1]) {
+            return util_extract_first_number(p[1] + '');
+        }
+         return 'unknown version';
+    }
+
     //some extra checks are required for newer browsers:
 
-    var extraData = [
+    var extra_search_browser_data = [
         {
-            doMatch: function (uastr) {
-                return uastr.indexOf('OPR') > 1;
+            dM: function (u) {
+                return u.indexOf('OPR') > 1;
             },
-            getVersion: function(){
-                var parts = getUserAgent().split('OPR');
-                var r = '';
-                if(parts[1]) {
-                    var s = parts[1]+'';
-
-                    for(var i = 0; i < s.length; i++) {
-                        if(!isNaN(s[i]) || s[i] === '.') {
-                            r+=s[i];
-                        }
-                        if(s[i] === ' ') {
-                            return (r);
-                        }
-                    }
-                    return (r);
-                }
-                return 'unknown version';
+            gV: function(){
+                return browser_get_version_from_useragent('OPR');
             },
-            identity: 'Opera'
+            i: 'Opera'
+        },
+        {
+            i: 'Tizen',
+            gV: function(){
+              return browser_get_version_from_useragent('Tizen');
+            },
+            dM: function(u){
+                return u.indexOf('Tizen') > 1;
+            }
         }
     ];
 
 
-    for(var i = 0; i < extraData.length; i++) {
-        var rule = extraData[i];
-        if(rule.doMatch(getUserAgent())) {
-            browserName = rule.identity;
-            browserVersion = rule.getVersion();
+    util_array_each(extra_search_browser_data, function(i, o){
+        if(o.dM($bu)) {
+            $BN = o.i;
+            $bV = o.gV();
         }
-    }
+    });
 
 
-    if(getNavigator().javaEnabled) {
+
+
+    if($bn.javaEnabled) {
         try {
-           envData.javaEnabled = getNavigator().javaEnabled();
+           envData.javaEnabled = $bn.javaEnabled();
         } catch (e) {
            envData.javaEnabled = false;
         }
     }
 
 
-    scand(getNavigator().plugins);
-    scand(getNavigator().mimeTypes);
+    fingerprint_scan($bn.plugins);
+    fingerprint_scan($bn.mimeTypes);
 
 
 
@@ -1906,30 +2037,30 @@ function getCacheInstance(instancename) {
     function getIs() {
 
         return {
-            iPod: ( getUserAgent().indexOf("iPod") > -1),
-            iPhone : ( getUserAgent().indexOf("iPhone") > -1),
-            nokiaN :( getUserAgent().indexOf("NokiaN") > -1),
-            wii : (getUserAgent().indexOf("Wii") > -1),
-            ps: ( /playstation/i.test(getUserAgent()) ),
-            xpSP2: (getUserAgent().indexOf('SV1') !== -1),
-            iPhoneiPod: ( getUserAgent().match(/iPhone|iPod/i) ),
-            iPhoneiPadiPod: ( getUserAgent().match(/iPhone|iPad|iPod/i) ),
-            desktop: ( !getUserAgent().match(/iPhone|iPad|android/i) ),
-            android: ( getUserAgent().match(/android/i) ),
-            winPhone: ( /IEMobile/.test(getUserAgent()) ),
-            chromeCRIOS: ( getUserAgent().match(/chrome|crios/i) ),
-            iOS: (/iPad|iPhone|iPod/.test(getUserAgent()) && !MSStream  ),
-            iPad: ( getUserAgent().match(/iPad/i) ),
-            firefox: ( getUserAgent().match(/firefox/i) ),
-            phoneDevice:( getUserAgent().match(/iPhone|android/i) ),
-            iOS7: ( getUserAgent().match(/.*CPU.*OS 7_\d/i) ),
+            iPod: ( $bu.indexOf("iPod") > -1),
+            iPhone : ( $bu.indexOf("iPhone") > -1),
+            nokiaN :( $bu.indexOf("NokiaN") > -1),
+            wii : ($bu.indexOf("Wii") > -1),
+            ps: ( /playstation/i.test($bu) ),
+            xpSP2: ($bu.indexOf('SV1') !== -1),
+            iPhoneiPod: ( $bu.match(/iPhone|iPod/i) ),
+            iPhoneiPadiPod: ( $bu.match(/iPhone|iPad|iPod/i) ),
+            desktop: ( !$bu.match(/iPhone|iPad|android/i) ),
+            android: ( $bu.match(/android/i) ),
+            winPhone: ( /IEMobile/.test($bu) ),
+            chromeCRIOS: ( $bu.match(/chrome|crios/i) ),
+            iOS: (/iPad|iPhone|iPod/.test($bu) && !MSStream  ),
+            iPad: ( $bu.match(/iPad/i) ),
+            firefox: ( $bu.match(/firefox/i) ),
+            phoneDevice:( $bu.match(/iPhone|android/i) ),
+            iOS7: ( $bu.match(/.*CPU.*OS 7_\d/i) ),
             iPhoneSafari: ( function(){
-                var safari = !!getWindow().safari, iPhone = /iPhone/i.test(getUserAgent());
+                var safari = !!$bw.safari, iPhone = /iPhone/i.test($bu);
                 return !!(iPhone && safari);
             })(),
-            tabletAndroidFirefox: (/(?:Android; Tablet).*(?:Firefox\/)/i.test(getUserAgent()) ),
+            tabletAndroidFirefox: (/(?:Android; Tablet).*(?:Firefox\/)/i.test($bu) ),
             msie: (function(){
-                var ua = getUserAgent();
+                var ua = $bu;
                 var msie = ua.indexOf('MSIE ');
                 if (msie > 0) { // IE 10 or older => return version number
                     return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
@@ -1950,7 +2081,7 @@ function getCacheInstance(instancename) {
 
     function getHases() {
         return {
-            chrome: getChrome()
+            chrome: $bw.chrome
         }
     }
 
@@ -1958,35 +2089,35 @@ function getCacheInstance(instancename) {
     function getGeetters() {
         return {
             firefoxVersion: (function(version) {
-                return (getUserAgent().toLowerCase().indexOf('firefox/' + version) !== -1);
+                return ($bu.toLowerCase().indexOf('firefox/' + version) !== -1);
             })(),
             androidVersion: (function() {
-                var match = getUserAgent().match(/Android\s([0-9\.]*)/);
+                var match = $bu.match(/Android\s([0-9\.]*)/);
                 return match ? match[1] : false;
             })(),
-            iPadVersion: (getUserAgent().match(/(?:iPad);.*CPU.*(?:OS (.*)_)\d/i) )
+            iPadVersion: ($bu.match(/(?:iPad);.*CPU.*(?:OS (.*)_)\d/i) )
         }
     }
 
 
     if(!os_info.name){
-         os_info.name = operatingSystem;
+         os_info.name = $W;
     }
 
     if(!os_info.version){
-        os_info.version = operatingSystemSub;
+        os_info.version = $K;
     }
 
 
 
 
-    fingerPrintData.plugins = pluginsList.sort().join('');
-    fingerPrintData.screen = encodeObject(screen_info);
-    fingerPrintData.chrome = encodeObject(getChrome(), 8);
-    fingerPrintData.netscape = encodeObject(getNetscape(), 4);
-    fingerPrintData.navigator = encodeObject(simplify(getNavigator()));
-    fingerPrintData.plugins = encodeObject(getNavigator().plugins, 3);
-    fingerPrintData.mimeTypes =  encodeObject(getNavigator().mimeTypes, 3);
+    $F.plugins = $p.sort().join('');
+    $F.screen = _eo(screen_info);
+    $F.chrome = _eo($bw.chrome, 8);
+    $F.netscape = _eo($bw.netscape, 4);
+    $F.navigator = _eo(_us($bn));
+    $F.plugins = _eo($bn.plugins, 3);
+    $F.mimeTypes =  _eo($bn.mimeTypes, 3);
 
 
     var testingCfg = {
@@ -1994,6 +2125,14 @@ function getCacheInstance(instancename) {
         maxListSize: 20,
         strlist : 'abcdefghihklmnopqrstuvxyz',
         logging: logger_defaultConfiguration
+    },
+    uniqueVal = getCacheInstance('@qtst').getSafe('lup', 1);
+
+
+    try {
+        uniqueVal = parseFloat(uniqueVal);
+    } catch (e) {
+        uniqueVal = new Date().getTime();
     }
 
 
@@ -2001,20 +2140,18 @@ function getCacheInstance(instancename) {
 
 
 
-    function randomString(){
-        var date = new Date();
-        maxrand.str ++;
-        var sum = numberToString(randInt(), testingCfg.strlist) + ''
-                + numberToString(date.getMilliseconds(), testingCfg.strlist) + ''
-                + numberToString(date.getMinutes(), testingCfg.strlist) + ''
-                + numberToString(date.getHours(), testingCfg.strlist) + ''
-                + numberToString(date.getDay(), testingCfg.strlist) + ''
-                + numberToString(date.getDate(), testingCfg.strlist) + ''
-                + numberToString(date.getMonth(), testingCfg.strlist) + ''
-                + numberToString(date.getFullYear(), testingCfg.strlist) + ''
-                + numberToString(date.getYear(), testingCfg.strlist) + ''
-            ;
-
+    function util_random_string(){
+        var date = new Date(),
+           sum = _uat(randInt()) + ''
+                    + _uat(date.getMilliseconds()) + ''
+                    + _uat(date.getMinutes()) + ''
+                    + _uat(date.getHours()) + ''
+                    + _uat(date.getDay()) + ''
+                    + _uat(date.getDate()) + ''
+                    + _uat(date.getMonth()) + ''
+                    + _uat(date.getFullYear()) + ''
+                    + _uat(date.getYear()) + ''
+                ;
         return sum;
 
     }
@@ -2028,18 +2165,18 @@ function getCacheInstance(instancename) {
         var calls = [];
         for(var i = 0 ; i < iterations; i++) {
             console.log('prepare ' + i);
-            console.log(randNr() + randomString() + randInt());
+            console.log(randNr() + util_random_string() + randInt());
 
             console.log(randListInt());
 
-             var tocalll = strdata.replace(/{string}/g, '"' + randomString()+ '"' )
+             var tocalll = strdata.replace(/{string}/g, '"' + util_random_string()+ '"' )
             //         .replace(/{number}/g, randNr() )
                     .replace(/{integer}/g, randInt() )
                     .replace(/{integerList}/g, JSON.stringify(randListInt()) )
-            //         .replace(/{numberList}/g, JSON.stringify(randListNr()) )
-            //         .replace(/{stringList}/g, JSON.stringify(randListString()) )
+            //         .replace(/{numberList}/g, JSON._usa(randListNr()) )
+            //         .replace(/{stringList}/g, JSON._usa(randListString()) )
                     .replace(/{objectList}/g, JSON.stringify(randListObj()) )
-            //         .replace(/{object}/g, JSON.stringify(randObj()) )
+            //         .replace(/{object}/g, JSON._usa(randObj()) )
                      .replace(/{any}/g, randAny() )
             //     ;
             // console.log('prepare ' + tocalll);
@@ -2068,13 +2205,49 @@ function getCacheInstance(instancename) {
 
 
     var nodeAssert;
-    if(__isnodejs()){
+    if($en){
         try {
             nodeAssert = __require('assert');
         }catch (e){
             nodeAssert = false;
         }
         testingCfg.logging.logStack = false;
+    }
+
+
+
+    function deepEquals(a, b) {
+
+        if(nodeAssert && nodeAssert.deepEqual){
+            if(testingCfg.logging) {
+                logger_getInstance('Tests', testingCfg.logging)
+                    .info('check deepEquals if ' + a + ' === ' + b);
+            }
+            nodeAssert.deepEqual(a, b);
+        } else {
+
+
+            if(_ia(a) && _ia(b)){
+                if(a.length === b.length){
+
+                    util_array_each(a, function (i, v) {
+                        if(v !== b[i]){
+                            throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
+                        }
+                    })
+                } else {
+                    throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
+                }
+            }
+
+
+            if(testingCfg.logging) {
+                logger_getInstance('Tests', testingCfg.logging)
+                    .info('check deepEquals if ' + a + ' === ' + b + ' ] SUCCESS');
+            }
+        }
+
+        return a === b;
     }
 
 
@@ -2108,7 +2281,7 @@ function getCacheInstance(instancename) {
 
                 if(!message){
                     if(typeof arguments != 'undefined') {
-                        message = __getCaller(arguments);
+                        message = _gmc(arguments);
                     }
                 }
 
@@ -2135,7 +2308,7 @@ function getCacheInstance(instancename) {
 
     function randList(maxSize, getter) {
         var arr = [];
-        var limit = Math.round(Math.random()*maxSize) + 1;
+        var limit = _mr(Math.random()*maxSize) + 1;
         for(var i = 0; i < limit; i++) {
             if(getter) {
                 arr.push(getter());
@@ -2163,7 +2336,7 @@ function getCacheInstance(instancename) {
         if(!maxSize){
             maxSize = testingCfg.maxListSize;
         }
-        return randList(maxSize, randomString);
+        return randList(maxSize, util_random_string);
     }
 
 
@@ -2176,10 +2349,10 @@ function getCacheInstance(instancename) {
 
 
     function randAny() {
-        var lrand = Math.round(Math.random() * 3);
+        var lrand = _mr(Math.random() * 3);
         switch (lrand) {
             case 0:
-                return '"' +randomString()+ '"';
+                return '"' +util_random_string()+ '"';
             case 1:
                 return randInt();
             case 2:
@@ -2196,23 +2369,18 @@ function getCacheInstance(instancename) {
 
         var obj = {};
         for(var i = 0; i < maxrand.obj; i++) {
-            obj[randomString()] = randAny();
+            obj[util_random_string()] = randAny();
         }
 
         return obj;
     }
 
 
-    var uniqueVal = getCacheInstance('@qtst').getSafe('lup', 1);
-    try {
-        uniqueVal = parseFloat(uniqueVal);
-    } catch (e) {
-        uniqueVal = new Date().getTime();
-    }
+
 
 
     
-    function incr(asfloat) {
+    function util_incr(asfloat) {
         if (asfloat) {
             uniqueVal+=0.01;
         } else {
@@ -2224,7 +2392,7 @@ function getCacheInstance(instancename) {
     
 
     function randInt(min, max) {
-       return Math.round(randNr(min, max))
+       return _mr(randNr(min, max))
     }
 
 
@@ -2245,24 +2413,8 @@ function getCacheInstance(instancename) {
 
             return (Math.random() * min);
         }
-        return incr();
+        return util_incr();
     }
-
-
-
-
-
-//    randNr = randNr,
-//    randInt = randInt,
-//    randList = randList,
-//    randListStr = randListString,
-//    randListObj = randListObj;
-//    incr = incr;
-//    randStr = randomString,
-//    randAny = randAny,
-//    randObj = randObj;
-
-
 
 
 var Tween = function(start, end, steps, object) {
@@ -2328,94 +2480,99 @@ var Easing = function(firstNumber, secondNumber, steps) {
 };
 
 
+
+
+
 var _fullscreenmethods = (function () {
-    var REQUEST_FULLSCREEN_FUNCS = {
-        'requestFullscreen': {
-            'change': 'onfullscreenchange',
-            'request': 'requestFullscreen',
-            'error': 'onfullscreenerror',
-            'enabled': 'fullscreenEnabled',
-            'cancel': 'exitFullscreen',
-            'fullScreenElement': 'fullscreenElement'
-        },
-        'mozRequestFullScreen': {
-            'change': 'onmozfullscreenchange',
-            'request': 'mozRequestFullScreen',
-            'error': 'onmozfullscreenerror',
-            'cancel': 'mozCancelFullScreen',
-            'enabled': 'mozFullScreenEnabled',
-            'fullScreenElement': 'mozFullScreenElement'
-        },
-        'webkitRequestFullScreen': {
-            'change': 'onwebkitfullscreenchange',
-            'request': 'webkitRequestFullScreen',
-            'cancel': 'webkitCancelFullScreen',
-            'error': 'onwebkitfullscreenerror',
-            'fullScreenElement': 'webkitCurrentFullScreenElement'
-        },
-        'MSRequestFullScreen': {
-            'change': 'MSFullscreenChange',
-            'request': 'MSRequestFullScreen',
-            'cancel': 'MSCancelFullScreen',
-            'error': 'MSFullscreenError',
-            'fullScreenElement': 'MSCurrentFullScreenElement'
-        },
-        'msRequestFullScreen': {
-            'change': 'msFullscreenChange',
-            'request': 'msRequestFullscreen',
-            'cancel': 'msExitFullscreen',
-            'error': 'msFullscreenError',
-            'fullScreenElement': 'msCurrentFullScreenElement'
-        }
-    };
-
-    var fullScreenMethods = false;
-
-    if(typeof window == 'undefined') {
-        return fullScreenMethods;
-    }
-
-    var TEST_NODE = document.createElement('div');
 
 
+   var REQUEST_FULLSCREEN_FUNCS = {
+       'requestFullscreen': {
+           'change': 'onfullscreenchange',
+           'request': 'requestFullscreen',
+           'error': 'onfullscreenerror',
+           'enabled': 'fullscreenEnabled',
+           'cancel': 'exitFullscreen',
+           'fullScreenElement': 'fullscreenElement'
+       },
+       'mozRequestFullScreen': {
+           'change': 'onmozfullscreenchange',
+           'request': 'mozRequestFullScreen',
+           'error': 'onmozfullscreenerror',
+           'cancel': 'mozCancelFullScreen',
+           'enabled': 'mozFullScreenEnabled',
+           'fullScreenElement': 'mozFullScreenElement'
+       },
+       'webkitRequestFullScreen': {
+           'change': 'onwebkitfullscreenchange',
+           'request': 'webkitRequestFullScreen',
+           'cancel': 'webkitCancelFullScreen',
+           'error': 'onwebkitfullscreenerror',
+           'fullScreenElement': 'webkitCurrentFullScreenElement'
+       },
+       'MSRequestFullScreen': {
+           'change': 'MSFullscreenChange',
+           'request': 'MSRequestFullScreen',
+           'cancel': 'MSCancelFullScreen',
+           'error': 'MSFullscreenError',
+           'fullScreenElement': 'MSCurrentFullScreenElement'
+       },
+       'msRequestFullScreen': {
+           'change': 'msFullscreenChange',
+           'request': 'msRequestFullscreen',
+           'cancel': 'msExitFullscreen',
+           'error': 'msFullscreenError',
+           'fullScreenElement': 'msCurrentFullScreenElement'
+       }
+   };
 
-    for (var prop in REQUEST_FULLSCREEN_FUNCS) {
-        var currentTest = REQUEST_FULLSCREEN_FUNCS[prop];
-        for (var item in currentTest) {
-            var name = currentTest[item];
-            if (document[name]) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
+   var fullScreenMethods = false;
 
-            if (TEST_NODE[name]) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
+   if(typeof window == 'undefined') {
+       return fullScreenMethods;
+   }
+
+   var TEST_NODE = document.createElement('div');
 
 
-            if (name in TEST_NODE) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
 
-            if (name in document) {
-                if (!fullScreenMethods) {
-                    fullScreenMethods = {};
-                }
-                fullScreenMethods[item] = name;
-            }
-        }
-    }
+   for (var prop in REQUEST_FULLSCREEN_FUNCS) {
+       var currentTest = REQUEST_FULLSCREEN_FUNCS[prop];
+       for (var item in currentTest) {
+           var name = currentTest[item];
+           if (document[name]) {
+               if (!fullScreenMethods) {
+                   fullScreenMethods = {};
+               }
+               fullScreenMethods[item] = name;
+           }
+
+           if (TEST_NODE[name]) {
+               if (!fullScreenMethods) {
+                   fullScreenMethods = {};
+               }
+               fullScreenMethods[item] = name;
+           }
 
 
-    return fullScreenMethods;
+           if (name in TEST_NODE) {
+               if (!fullScreenMethods) {
+                   fullScreenMethods = {};
+               }
+               fullScreenMethods[item] = name;
+           }
+
+           if (name in document) {
+               if (!fullScreenMethods) {
+                   fullScreenMethods = {};
+               }
+               fullScreenMethods[item] = name;
+           }
+       }
+   }
+
+
+   return fullScreenMethods;
 
 })();
 
@@ -2423,171 +2580,162 @@ var _fullscreenmethods = (function () {
 
 
 
+var h4i = 0,
+    h4b = [],
+    h4ra = util_random_string() + util_incr(),
+    $i4 = '___qwi' + util_random_string(),
+    nww = 200, nwh = 100,
+    mnw = _mr(screen_info.width / nww),
+    mnh = _mr(screen_info.height / nwh),
+    matrix = [];
 
 
+if($eb){
+    $bw[$i4] = 0;
+}
 
 
-
-
-
-
-
-function _styleElement(element, obj) {
-    for(var i in obj){
-        element.style[i] = obj[i];
+for(var i = 0; i < mnw; i++){
+    for(var j = 0; j < mnh - 1; j++){
+        matrix.push([i * nww, j * nwh]);
     }
 }
 
-var _html4notification_pid = 0;
+var matrixpid =0;
 
-
-function _getAppender() {
-    return document.body;
+function style_element(e, o) {
+    for (var i in o) {
+        e.style[i] = o[i];
+    }
 }
 
-var html4buffer = [];
-var __html4notifyRemove = randomString() + incr();
 
-if(__isbrowser()){
 
-    window[__html4notifyRemove] = function (itemid) {
 
-        if(document.getElementById(itemid)){
-            var item = document.getElementById(itemid);
+
+if($eb){
+    window[h4ra] = function (itemid) {
+        if(document_getElementById(itemid)){
+            var item = document_getElementById(itemid);
             if(item.parentNode){
                 item.parentNode.removeChild(item);
-                for(var i = 0; i < html4buffer.length; i++){
-                    if(html4buffer[i].id == itemid){
-                        html4buffer.splice(i, 1);
-
+                for(var i = 0; i < h4b.length; i++){
+                    if(h4b[i].id == itemid){
+                        h4b.splice(i, 1);
                         setTimeout(function(){
-                            rearrangehtml4();
+                            html4_rearrange();
                         }, 200)
                     }
                 }
-
-
             }
         } else {
-           rearrangehtml4();
+           html4_rearrange();
         }
-
-
-
-
-
     }
 }
 
 
 
 function replaceItem(item, i){
-       var expectedTop = (i * 80) + 5, actualTop = parseFloat(item.style.top.replace('px', ''));
+
+
+        var expectedTop = 0.001;
+        if(i > 0){
+            expectedTop = (i * 84);
+        }
+        var actualTop = parseFloat(item.style.top.replace('px', ''));
         new Tween(actualTop, expectedTop, 50).onUpdate(function (value) {
              if(+value){
                 item.style.top = value + 'px';
-             }
 
+
+             }
         }).start();
 }
 
 
-function rearrangehtml4() {
-    for(var i = 0; i <  html4buffer.length; i++) {
-        replaceItem(html4buffer[i].item, i);
+function html4_rearrange() {
+    for(var i = 0; i <  h4b.length; i++) {
+        replaceItem(h4b[i].item, i);
     }
 }
 
-function _html4notification(title, text, picture, lifetime, success, failure, onclick, onclose) {
+function html4_notification_build_dom(identifier, title, text, picture, x) {
+    h4i ++;
+   var
+        r = document_createElement('div', identifier),
+        te = document_createElement('div', 'qntftt'+ h4i),
+        textElement = document_createElement('div', 'qntftx' + h4i),
+        w = document_createElement('div', 'qntfw' + h4i),
+        pictureElement = document_createElement('img', 'qntfim' + h4i),
+        mxt = (screen_info.height + 200)
+        g = ['right', 'left'];
 
-    if(!__isbrowser()){
-        if(failure){
-            failure();
-        }
-        return false;
+    if($W === 'Windows'){
+        g = ['left', 'right'];
     }
 
-    var d = document,
-        root = d.createElement('div'),
-        titleElement = d.createElement('div'),
-        textElement = d.createElement('div'),
-        wrapper = d.createElement('div'),
-        pictureElement = d.createElement('img'),
-        maxtop = (screen_info.height + 200);
-
-        identifier = "qntf" + _html4notification_pid,
-        root.id = identifier,
-        wrapper.id = "qntfwrp" + _html4notification_pid,
-        titleElement.id = "qntftt"+ _html4notification_pid,
-        textElement.id = "qntftxt"+ _html4notification_pid,
-        pictureElement.id = "qntftxt"+ _html4notification_pid;
-
-
-    _styleElement(root, {
+    style_element(r, {
         position: 'absolute',
         'z-index': '9999999999',
         height: '80px',
         padding: '4px',
         'border-radius' : '2px',
         'box-shadow': '-2px 2px 2px ButtonShadow',
-        top: maxtop + 'px',
+        top: mxt + 'px',
         right: '0px',
         background: 'Menu',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        width: '300px'
     });
 
-    _styleElement(titleElement, {
-        'font-family': 'sans-serif', 'font-size': '14px', 'text-align':'right', 'display': 'block', 'height': '18px'
-    })
-
-
-    var floats = ['right', 'left'];
-
-    if(operatingSystem === 'Windows'){
-        floats = ['left', 'rigth'];
-    }
-    titleElement.innerHTML = '<div style="display: inline; float: '+floats[0]+'">' + title
-        + '</div><div style="font-weight: bold; display: inline; float: '+floats[1]+'; ' +
+    te.innerHTML = '<div style="display: inline; float: '+g[0]+'">' + title
+        + '</div><div style="font-weight: bold; display: inline; float: '+g[1]+'; ' +
         'font-size: 12px; font-family: monospace; color: ButtonText; cursor: hand; cursor: pointer" ' +
-        'onclick="'+__html4notifyRemove+'(\''+root.id+'\')">x</div>';
-    root.appendChild(titleElement);
+        'onclick="'+x+'(\''+r.id+'\')">x</div>';
+
+    style_element(te, {'font-family': 'sans-serif', 'font-size': '14px', height: '17px', display: 'block'});
+    r.appendChild(te);
+    r.appendChild(w);
+
     var wrapd = '99%';
     if(text){
         textElement.innerHTML = text;
-        wrapper.appendChild(textElement);
+        w.appendChild(textElement);
+        style_element(textElement, {'display': 'inline', 'width': '220px', 'font-size': '12px', 'float': 'left'});
     }
 
     if(picture){
         pictureElement.src = picture;
-        wrapper.appendChild(pictureElement);
+        w.appendChild(pictureElement);
+        style_element(pictureElement, {'display': 'inline', 'width': '54px', 'height': '54px', 'float': 'right'});
     }
 
-    if(text && picture){
-        wrapd = '49%';
+    return r;
+}
+
+function html4_notification(title, text, picture, lifetime, success, failure, onclick, onclose) {
+
+    if(!$eb){
+        if(failure){
+            failure();
+        }
+        return false;
     }
+    var identifier = "qntf" + h4i,
+        root = html4_notification_build_dom(identifier, title, text, picture, h4ra);
+    _gba().appendChild(root);
 
 
-    var prp = {
-        'display': 'inline',
-        'width': wrapd,
-        'font-size': '12px'
-    }, fltx = 'f'+'lo'+'at'; prp[fltx] = 'left';
-    _styleElement(textElement, prp), prp[fltx] = 'right';
-    _styleElement(pictureElement, prp);
-
-    root.appendChild(wrapper);
-    _getAppender().appendChild(root);
-
-
-    html4buffer.push({
+    h4b.push({
         id: identifier,
         item: root
     });
 
-    rearrangehtml4();
+    html4_rearrange();
 
-    _html4notification_pid++;
-      var action = 'window["'+__html4notifyRemove + '"](\'' + identifier + '\')';
+
+    var action = 'window["'+h4ra + '"](\'' + identifier + '\')';
 
     root.remove = eval('(function __rmhtml4_'+identifier+'(){ return function() { '+action+' }; } )()');
 
@@ -2603,33 +2751,10 @@ function _html4notification(title, text, picture, lifetime, success, failure, on
     return root;
 };
 
-var incrprop = '___qwincrprop' + randomString(),
-    nww = 200, nwh = 100,
-    mnw = Math.round(screen_info.width / nww),
-    mnh = Math.round(screen_info.height / nwh),
-    mnmax = mnw > mnh ? mnv : mnh,
-    matrix = [];
 
+function html4_window_notification(title, text, picture, lifetime, success, failure, onclick, onclose) {
 
-
-window[incrprop] = 0;
-
-for(var i = 0; i < mnw; i++){
-    for(var j = 0; j < mnh - 1; j++){
-        matrix.push([i * nww, j * nwh]);
-    }
-}
-
-var matrixpid =0;
-
-
-
-
-
-
-function _html4Winotification(title, text, picture, lifetime, success, failure, onclick, onclose) {
-
-    if(!__isbrowser() || !getIs().desktop){
+    if(!$eb || !getIs().desktop){
         if(failure){
             failure()
         }
@@ -2647,17 +2772,17 @@ function _html4Winotification(title, text, picture, lifetime, success, failure, 
             +  'left='+expectedLeft+',top='+ expectedTop +',width='+nww+',height=' + nwh);
 
     if(a){
-        var pid = randomString() + _html4notification_pid,
-            closeAction = 'window["' + pid + '"].close();  window[' + incrprop + ']--;',
+        var pid = util_random_string() + h4i,
+            closeAction = 'window["' + pid + '"].close();  window[' + $i4 + ']--;',
             d = a.document;
-        _html4notification_pid++;
+        h4i++;
         window[pid] = a;
         a.remove = 'eval(function __rmvwin_'+pid+'(){ return function(){ '+closeAction+' } })';
 
+        var root = html4_notification_build_dom('ksk', title, text, picture, '(function(i){window.close();})');
+        d.write(root.innerHTML);
 
-        d.write(title + text);
-
-        window[incrprop]++;
+        window[$i4]++;
         if(lifetime){
             eval('setTimeout(function () { ' + closeAction + '},'+lifetime+');');
         }
@@ -2670,15 +2795,13 @@ function _html4Winotification(title, text, picture, lifetime, success, failure, 
         failure()
     }
     return false;
-}
-
-//code for chrome:
+}//code for chrome:
 
 //code for firefox
 
 var isHttpOrHttps = (function () {
-    if(document && document.URL) {
-        var protocol = url_decode(document.URL).protocol;
+    if($eb && document.URL) {
+        var protocol = _ud(document.URL).protocol;
         return protocol === 'http' || protocol === 'https';
     }
     return false;
@@ -2688,7 +2811,7 @@ var isHttpOrHttps = (function () {
 function _html5notification(title, text, picture, lifetime, success, failure, onclick, onclose){
 
 
-    if(!__isbrowser() || !isHttpOrHttps){
+    if(!$eb || !isHttpOrHttps){
         if(failure){
             failure();
         }
@@ -2704,20 +2827,17 @@ function _html5notification(title, text, picture, lifetime, success, failure, on
             currentNotification = window.webkitNotifications.createNotification(
                 picture, title, text
             );
-            // currentNotification.onclick = settings.onclick;
-            // currentNotification.onclose = settings.onclose;
-
             currentNotification.show();
         }
 
         else {
             currentNotification = new Notification(title, {body: text, icon: picture});
-            // currentNotification.onclick = settings.onclick;
-            // currentNotification.onclose = settings.onclose;
+
         }
 
-        if(currentNotification){
-            console.log(currentNotification);
+        if(currentNotification) {
+            currentNotification.onclick = onclick;
+            currentNotification.onclose = onclose;
             currentNotification.remove = function () {
                 if (currentNotification) {
                     try {
@@ -2730,11 +2850,15 @@ function _html5notification(title, text, picture, lifetime, success, failure, on
                     } catch (ex) {
                     }
                 }
+           }
+            if(lifetime){
+                setTimeout(currentNotification.remove, lifetime);
             }
+
         }
     }
 
-    if (window.webkitNotifications && browserName != 'Safari') {
+    if (window.webkitNotifications && $BN != 'Safari') {
         var havePermission = window.webkitNotifications.checkPermission();
 
         if (havePermission == 0) {
@@ -2766,15 +2890,70 @@ function _html5notification(title, text, picture, lifetime, success, failure, on
 }
 
 
+
+
+
+function system_notification(title, text, picture, lifetime, success, failure, onclick, onclose) {
+
+    if($eb){
+        if(failure){
+            failure();
+        }
+        return false;
+    }
+
+
+
+
+
+    if( envData.javaEnabled && envData.javaPath ){
+        var exec = __require('child_process');
+
+        if(!exec){
+            if(failure){
+                failure();
+            }
+            return false;
+        }
+
+        requestAnimationFrame(function () {
+            var args = ['-jar',
+            '"' + __dirname + '/jentil-cabaret-1.0-jar-with-dependencies.jar"',
+            '--notify',
+            '"' +title+'"',
+                '"' +text+'"',
+                '"' + picture + '"', parseInt(lifetime)];
+            var command = '"' + envData.javaPath + '" ' + args.join(' ');
+            console.log(command);
+            exec.exec(command);
+        }, 0);
+
+
+
+    } else if (failure){
+        failure();
+    }
+
+
+
+}
+
+
+
 function cross_notify(title, text, picture, lifetime, success, failure, onclick, onclose) {
     _html5notification(title, text, picture, lifetime, success, function () {
-        _html4Winotification(title, text, picture, lifetime, success, function () {
-            _html4notification(title, text, picture, lifetime, success, function () {
-                console.log('TODO');
+        html4_window_notification(title, text, picture, lifetime, success, function () {
+            html4_notification(title, text, picture, lifetime, success, function () {
+                system_notification(title, text, picture, lifetime, success, function () {
+                    console.log('TODO');
+                }, onclick, onclose);
             }, onclick, onclose);
         }, onclick, onclose);
     }, onclick, onclose);
 }
+
+
+
 
 
 
@@ -2879,16 +3058,11 @@ var SoundPlayer = (function() {
     }
 
     return {
-        privateMessageReceived: privateMessageReceived,
-        createAudioElement: createAudioElement,
-        playAudioInstance: playAudioInstance,
-        playAttached: playAttached,
-        stopAudioElement: stopAudioElement,
-        privateShowRequest: privateShowRequest,
-        getSounds: getSounds
+
     };
 
 })();
+
 //
 //get the IP addresses associated with an account
 // http://stackoverflow.com/questions/37169701/get-current-machine-ip-in-js-no-third-party-services
@@ -2920,30 +3094,30 @@ function getIPs(callback){
             optional: [{RtpDataChannels: true}]
         };
         var servers = {iceServers: [{urls: "stun:stun.services.mozilla.com"}]};
-        //construct a new RTCPeerConnection
+        /*construct a new RTCPeerConnection*/
         var pc = new RTCPeerConnection(servers, mediaConstraints);
 
         function handleCandidate(candidate) {
-            //match just the IP address
+            /*match just the IP address*/
             var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
             var ip_addr = ip_regex.exec(candidate)[1];
-            //remove duplicates
+            /*remove duplicates*/
             if (ip_dups[ip_addr] === undefined) {
                 callback(ip_addr);
             }
             ip_dups[ip_addr] = true;
         }
 
-        //listen for candidate events
+        /*listen for candidate events*/
         pc.onicecandidate = function (ice) {
             //skip non-candidate events
             if (ice.candidate) {
                 handleCandidate(ice.candidate.candidate);
             }
         };
-        //create a bogus data channel
+        /*create a bogus data channel*/
         pc.createDataChannel("");
-        //create an offer sdp
+        /*create an offer sdp*/
         pc.createOffer(function (result) {
             //trigger the stun server request
             pc.setLocalDescription(result, function () {
@@ -2952,9 +3126,8 @@ function getIPs(callback){
         }, function () {
         });
 
-        //wait for a while to let everything done
+        /*wait for a while to let everything done*/
         setTimeout(function () {
-            //read candidate info from local description
             var lines = pc.localDescription.sdp.split('\n');
 
             lines.forEach(function (line) {
@@ -3134,102 +3307,468 @@ var Inject = (function () {
 
 
 
+function http_request(request_method, request_url, request_data, success_callback, failure_callback, request_headers) {
+    var x;
+    if(typeof window != 'undefined' && window.XMLHttpRequest) {
+        x = new XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+        try {
+            x = new ActiveXObject('Msxml2.XMLHTTP');
+        } catch (err) {
+            try {
+                x = new ActiveXObject('Microsoft.XMLHTTP');
+            } catch (err) {
+                x = false;
+                console.log('xmlhttp failed to init');
+                if (failure_callback) {
+                    failure_callback(err);
+                }
+                return {};
+            }
+        }
+    }
+
+    x.onreadystatechange = function() {
+        try {
+            if (x.readyState == 4 && x.status == 200) {
+                if (success_callback)
+                    success_callback(x, (x.responseText || x.response));
+            } else if (failure_callback){
+                failure_callback(x);
+            }
+        } catch (e) {
+            if (failure_callback) {
+                failure_callback(e);
+            }
+        }
+    };
+
+    x.onerror = function(e) {
+        if (failure_callback) {
+            failure_callback(e);
+        }
+    };
 
 
-var AjaxSender = {
-    method: {
-        post: 'POST',
-        get: 'GET'
+    try {
+        x.open(request_method, request_url, true);
+        for(var i in request_headers){
+            x.setRequestHeader(i, request_headers[i]);
+        }
+        
+
+        if (request_data) {
+            x.send(request_data);
+        } else {
+            x.send();
+        }
+
+    } catch (e){
+        if (failure_callback) {
+            failure_callback(e);
+        }
+    }
+}
+
+
+function http_get(request_url, request_data, success_callback, failure_callback, request_headers) {
+    return http_request('GET', request_url, url_querify(request_data), success_callback, failure_callback, request_headers);
+}
+
+function http_post(request_url, request_data, success_callback, failure_callback, request_headers) {
+    return http_request('POST', request_url, url_querify(request_data), success_callback, failure_callback, request_headers);
+}
+
+function http_post_x_form(request_url, request_data, success_callback, failure_callback, request_headers) {
+    if(!request_headers){
+        request_headers = {};
+    }
+    if(!request_headers['Content-type']){
+        request_headers['Content-type'] = 'application/x-www-form-urlencoded';
+    }
+    return http_post(request_url, request_data, success_callback, failure_callback, request_headers);
+}
+var controller_data_types = {
+    text: {
+        valid: function (i) {
+            return true;
+        }
     },
 
-    send: function(options) {
-
-        var xmlhttp;
-        var method = 'post';
-        if (options.method) {
-            method = options.method;
+    number: {
+        valid: function (i) {
+            return true;
         }
-
-        if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-        } else if (window.ActiveXObject) {
-            try {
-                xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
-            } catch (err) {
-                try {
-                    xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
-                } catch (ex) {
-                    xmlhttp = false;
-                    console.log('xmlhttp failed to init');
-                    if (options.onexception) {
-                        options.onexception(ex);
-                    }
-                }
-            }
-        }
-
-        xmlhttp.onreadystatechange = function() {
-            try {
-                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                    if (options.success)
-                        options.success((xmlhttp.responseText ||
-                        xmlhttp.response), xmlhttp);
-                } else {
-                    if (options.onerror)
-                        options.onerror(xmlhttp);
-                }
-            } catch (ex) {
-               
-                if (options.onexception) {
-                    options.onexception(ex);
-                }
-            }
-        };
-        xmlhttp.onerror = function(err) {
-            if (options.onerror) {
-                options.onerror(err);
-            }
-        };
-        try {
-            xmlhttp.open(method, options.url, true);
-            try {
-                if (method === AjaxSender.method.post) {
-                    xmlhttp.setRequestHeader('Content-type',
-                        'application/x-www-form-urlencoded');
-                }
-            } catch (ex) {
-                console.log(ex);
-                if (options.onexception) {
-                    options.onexception(ex);
-                }
-            }
-        } catch (ex) {
-            console.log(ex);
-            if (options.onexception) {
-                options.onexception(ex);
-            }
-        }
-
-
-
-        try {
-            if (options.data) {
-                xmlhttp.send(options.data);
-            } else {
-                xmlhttp.send();
-            }
-        } catch (exception) {
-            console.log(exception);
-            if (options.onexception) {
-                options.onexception(exception);
-            }
-        }
-
-        return 0;
     }
-};
+}, controller_logger = logger_getInstance('dulcineea');
 
 
+
+
+
+var controller_dom_parser = function (o) {
+    var c = o.tagName, n, v, t;
+    if(c){
+        c = c.toLowerCase();
+        if(o.getAttribute){
+            n = o.getAttribute('name');
+            v = o.getAttribute('value');
+            t = o.getAttribute('type');
+        }
+        if(!n){
+            n = o.id;
+        }
+
+        if(!t && c === 'textarea' ){
+            t = 'text';
+        }
+
+        if(!v){
+            v = o.innerHTML;
+        }
+
+        return {
+            name: n, value: v, type: t
+        }
+    }
+}
+
+var controller_options_html = {
+    fetch: function (o) {
+        var r = [];
+        if(o && o.childNodes){
+            for(var j = 0; j < o.childNodes.length; j++){
+               var c = o.childNodes[j],
+                   s = (controller_dom_parser(o.childNodes[j]));
+                if(s){
+                    r.push(s);
+                }
+            }
+        }
+
+        return r;
+    }    
+}
+
+/**
+ * converts a string into a list of valid JSON callers
+ * @param {String} input
+ * @returns {Array}
+ * @example
+ * dulcineea.compiler.extract('a.b.c'); //returns ['a', 'b', 'c']
+ */
+function extract_callers(input_string) {
+    if(!input_string){
+        return [];
+    }
+    var _point_buffer = input_string.trim().split('.'), _response = [];
+
+    for(var i = 0; i < _point_buffer.length; i++){
+        var _sub_arrays = _point_buffer[i].split('[');
+        for(var j = 0; j < _sub_arrays.length; j++){
+            var _sub_sub = _sub_arrays[j].split(']');
+            for(var k = 0; k < _sub_sub.length; k++){
+                if(_sub_sub[k]){
+                    _response.push(_sub_sub[k]);
+                }
+            }
+        }
+    }
+
+
+    return _response;
+
+
+}
+
+
+function _execute_js(_input_string, _input_object) {
+    return _execute_recursive(extract_callers(_input_string), _input_object);
+}
+
+function _execute_recursive(_input_list, _input_object) {
+    if(_input_list.length === 0){
+        return _input_object;
+    }
+    var _key = _input_list[0];
+    if(_key.startsWith('\'') && _key.endsWith('\'')){
+        _key = _key.substring(1,_key.length -1);
+    }
+
+    if(_key.startsWith('"') && _key.endsWith('"')){
+        _key = _key.substring(1,_key.length -1);
+    }
+
+
+
+    var _temporary_response = _input_object[_key];
+
+    if(_input_list.length > 1){
+        return _execute_recursive(_input_list.splice(1, _input_list.length -1), _temporary_response);
+    }
+    return _temporary_response;
+}
+
+
+function template_replace(t, o) {
+    var p = t + '';
+    console.log(p);
+    util_array_each(t.match(/{{(.*?)}}/g), function(i, s) {
+         var n = s.substring(2, s.length - 2);
+         p = p.replace(s, eval.call(n, o));
+         console.log(i, s)
+    })
+
+    console.log(p);
+}
+
+/**
+input model: {prop: key}
+n = name
+i = input to fetch
+
+*/
+function controller_constructor(n, i, o) {
+
+    var v = o.fetch(i);
+
+    controller_logger.info(n);
+    controller_logger.info(v);
+    
+   // setInterval(function () {
+        util_array_each(v,function (i, d) {
+            console.log(i, d)
+        });
+    // }, 1000)
+}
+
+function controller_dom_init(e) {
+    util_array_each(e, function (i, o) {
+        if(o.id){
+            controller_constructor(o.id, o, controller_options_html);
+        }
+
+    })
+}
+
+//controller_dom_init(document.getElementsByClassName('controller-new'));
+function gog_extend_feature(e) {
+    console.log(e)
+    if(!e.attr){
+        e.attr = function (n, v) {
+            this.setAttribute(n, v);
+            return this;
+        }
+    }
+
+    if(!e.width){
+        e.width = function (v) {
+            this.setAttribute('width', v);
+            return this;
+        }
+    }
+
+    if(!e.height){
+        e.height = function (v) {
+            this.setAttribute('height', v);
+            return this;
+        }
+    }
+
+    if(!e.add){
+        e.add = function (c) {
+            this.appendChild(c);
+            return this;
+        }
+    }
+
+    if(!e.x){
+        e.x = function (v) {
+            switch ((this.tagName+'').toLowerCase()){
+                case 'circle':
+                    this.setAttribute('cx', v);
+            }
+            return this;
+        }
+    }
+
+    if(!e.y){
+        e.y = function (v) {
+            switch ((this.tagName+'').toLowerCase()){
+                case 'circle':
+                    this.setAttribute('cy', v);
+            }
+            return this;
+        }
+    }
+
+
+    if(!e.stroke){
+        e.stroke = function (v, w) {
+            this.setAttribute('stroke', v);
+            if(w){
+                this.setAttribute('stroke-width', w);
+            }
+            return this;
+        }
+    }
+
+    if(!e.fill){
+        e.fill = function (v) {
+            this.setAttribute('fill', v);
+            return this;
+        }
+    }
+
+
+    return e;
+}
+
+
+
+
+var gog_root = (function () {
+
+    var ns = 'http://www.w3.org/2000/svg';
+
+    function _movieclip_constructor(n) {
+        var t = {}, c = [], _parent_id = null;
+
+
+        function _width(v) {
+            t.width = v;
+            return this;
+        }
+
+        function _height(v) {
+            t.height = v;
+            return this;
+        }
+
+        function _stroke(c, w) {
+            t.stroke = c;
+            if(w){
+                t['stroke-width'] = w;
+            }
+            return this;
+        }
+
+
+        function _x(v) {
+            t.cx = v;
+            return this;
+        }
+
+        function _y(v) {
+           t.cy = v;
+            return this;
+        }
+
+
+        function _add(e) {
+            e.setParentId(get_data().id);
+            c.push(e);
+            return this;
+        }
+
+        function _radius(r) {
+            t.r = r;
+            return this;
+        }
+
+        function _fill(c) {
+            t.fill = c;
+            return this;
+        }
+
+
+        function get_data() {
+            if(!t.id){
+                t.id = util_dom_id('gog')
+            }
+            return t;
+        }
+
+
+
+        function _getContent() {
+
+            var txt = '<' + n;
+            util_obj_each(t, function (k, v) {
+                txt+= ' '+k+'="'+v+'"';
+            })
+            txt+='>';
+
+            util_array_each(c, function (i, o) {
+                txt+=o.getContent();
+            })
+
+
+            txt+='</'+n+'>';
+            return txt;
+        }
+        
+        function _update() {
+            console.log(_parent_id);
+            if(_parent_id && document_getElementById(_parent_id)){
+
+                document_getElementById(_parent_id).innerHTML = _getContent();
+            }
+
+            return this;
+        }
+
+
+        return {
+            width: _width,
+            add: _add,
+            height: _height,
+            x: _x,
+            y:_y,
+            stroke: _stroke,
+            fill: _fill,
+            radius: _radius,
+            update: _update,
+            getParentId: function () {
+                return _parent_id;
+            },
+            setParentId: function (m) {
+                _parent_id = m;
+            },
+            _isgog: true,
+            getData: get_data,
+            getContent: _getContent
+        }
+
+    }
+
+
+
+
+
+
+
+    var rs = null;
+    return {
+        getStage: function () {
+          if(rs === null){
+              rs = new _movieclip_constructor('svg');
+
+              var id =  util_dom_id('svgog'),
+                  dv =  document_getElementSafe('div', id);
+              rs.setParentId(id);
+          }
+
+          return rs;
+        },
+        newClip: function (s) {
+            return new _movieclip_constructor(s);
+        }
+
+    }
+
+})();
+var quixot_pack_info = {version: "1.0.2", buildDate: "1483025326112"};
 return {
     /**
      * @namespace Fingerprint
@@ -3242,26 +3781,26 @@ return {
          * @memberof quixot.Fingerprint
          * @returns {Object} the full scanned properties
          */
-        data: getFingerPrintData,
+        data: _fd,
         /**
          *  @method identifier
          *  @memberof quixot.Fingerprint
          *  @returns {String} The unique fingerprint identifier
          */
-        identifier: getFingerprintIdentifier,
+        identifier: _fi,
 
         /**
          * @memberof quixot.Fingerprint
          * @method text
          * @returns {String} the text to compose the identifier
          */
-        text: getFingerPrintText,
+        text: _ft,
         /**
          * @method numbers
          * @memberof quixot.Fingerprint
          * @returns {String} the numbers from text()
          */
-        numbers: getFingerprintNumbers
+        numbers: _fn
     },
 
     /**
@@ -3281,7 +3820,7 @@ return {
          * @returns {Number} -1 if error occurs, 0 if no event is registered, > 0 as length of
          *                   registered events for specified name
          */
-        dispatch: dispatch,
+        dispatch: _ed,
         /**
          * check if a provided listener exist
          * @memberof quixot.Event
@@ -3293,6 +3832,7 @@ return {
 
         /**
          * register an event listener
+         * @function
          * @memberof quixot.Event
          * @param eventName {String} required
          * @param callback {Function} required
@@ -3365,7 +3905,7 @@ return {
          * @returns {String}
          */
         querify: url_querify,
-        decode: url_decode,
+        decode: _ud,
         /**
          * @memberof quixot.URL
          * @returns {String} current path name, as defined by window.location.pathname
@@ -3376,7 +3916,7 @@ return {
          * @returns {String} current search name, as defined by window.location.search
          */
         currentSearch: url_current_search,
-        currentParams: url_current_params
+        currentParams: _ucp
     },
 
     /**
@@ -3400,7 +3940,7 @@ return {
              * @param message
              */
             info: function (message) {
-                defaultLoggerInstance.log('info', message);
+                $ldi.log('info', message);
             },
             /**
              * @memberof quixot.Logger
@@ -3423,28 +3963,28 @@ return {
              * @param message
              */
             trace: function (message) {
-                defaultLoggerInstance.trace(message);
+                $ldi.trace(message);
             },
             /**
              * @memberof quixot.Logger
              * @param message
              */
             error: function(message){
-                defaultLoggerInstance.log('error', message);
+                $ldi.log('error', message);
             },
             /**
              * @memberof quixot.Logger
              * @param message {String}
              */
             warn: function (message) {
-                defaultLoggerInstance.warn(message);
+                $ldi.warn(message);
             },
             /**
              * @memberof quixot.Logger
              * @returns {Object} default instance logs
              */
             getLogs: function () {
-                return defaultLoggerInstance.getLogs();
+                return $ldi.getLogs();
             },
             /**
              * @memberof quixot.Logger
@@ -3528,18 +4068,40 @@ return {
          *  quixot.atos('000000'); // "abcdef"
          *  quixot.atos('000000', '!@#$%^&*()+='); // "!@#$%^"
          */
-        atos: numberToString,
-        stringToHex: stringToHex,
-        rgbToHex: rgbToHex,
-        rgbToHexShift: rgbToHexShift,
-        serialize: serialize,
-        simplify: simplify,
-        isPrimitive: isPrimitive,
-        isFunction: isFunction,
-        objKeys: objKeys,
-        isArray: isArray,
-        encodeObject: encodeObject,
-        stringify: stringify,
+        atos: _uat,
+
+        /**
+         * converts any type of data into a string containing only numeric characters
+         * @method aton
+         * @memberOf quixot.Util
+         * @param input {String|Number|Array|Object|Date}
+         * @param separator {String} a separator for numbers
+         * @returns {String} a string containing only numeric characters
+         * @example
+         *  quixot.Util.aton('\""', '__'); // "54__54"
+         *  quixot.Util.aton(1234+'bcd'); //"1234234"
+         */
+        aton: util_aton,
+        /**
+         * generates an unique id that begins with a letter ([A-Za-z])
+         * and may be followed by any number of letters, digits ([0-9])
+         * @method makeDomId
+         * @memberOf quixot.Util
+         * @param prefix {String} optional, a prefix to be appended at the begging of the string
+         * @returns {String}
+         */
+        makeDomId: util_dom_id,
+        stringToHex: _shx,
+        rgbToHex: _rtx,
+        rgbToHexShift: _rtxShift,
+        serialize: _uss,
+        simplify: _us,
+        isPrimitive: _uip,
+        isFunction: _uif,
+        _ok: _ok,
+        isArray: _ia,
+        encodeObject: _eo,
+        stringify: _usa,
         /**
          * increments an unique number (old value is cached)
          * @memberof quixot.Util
@@ -3549,7 +4111,7 @@ return {
          * quixot.Util.incr(true); // 30.07000000000001
          * quixot.Util.incr();    // 31
          */
-        incr: function (asfloat) {},
+        incr: util_incr,
         /**
          * if no parameters are provided a quixot.Util.incr() value will be returned
          * @memberof quixot.Util
@@ -3574,9 +4136,10 @@ return {
 
             /**
              * put item in cache
+             * @function
              * @memberof quixot.Cache
-             * @param key
-             * @param value
+             * @param key {String}
+             * @param value {String|Number}
              */
             put: function (key, value) {
                 domainCacheInstance.put(key, value)
@@ -3618,6 +4181,7 @@ return {
 
         battery: system_battery,
         screen: screen_info,
+        performance: _sgp,
 
         /**
          * operating system info
@@ -3636,9 +4200,18 @@ return {
     },
 
 
+    /**
+     *  browser information< br/>
+     *  @namespace Browser
+     *  @memberof quixot
+     *  @example
+     *  quixot.Browser.name; (Chrome|Firefox|Explorer|Opera|iCab|rekonq|Midori|Arora|Stainless|Epiphany|K-Meleon|Camino|Maxthon|SeaMonkey|Edge|OmniWeb|Apple|KDE|Netscape|MSIE|Gecko|Mozilla|Tizen)
+     *  quixot.Browser.version;
+     */
     Browser: {
-        name: browserName,
-        version: browserVersion,
+        name: $BN,
+        version: $bV,
+        searchedData: browser_searched_data,
         is: getIs(),
         has: getHases(),
         get: getGeetters()
@@ -3651,6 +4224,7 @@ return {
      */
     Sancho : {
          equals: equals,
+         deepEquals: deepEquals,
          hasData: hasData,
          donkey: monkey,
          config: testingCfg
@@ -3658,28 +4232,95 @@ return {
 
     Tween: Tween,
     Easing: Easing,
-    rearrange: rearrangehtml4,
-    
+
+    /**
+     * minimal graphic user interface components
+     * designed to run inside any type of enviroment and provide if possible
+     * native behaviour on visual components
+     * @namespace Mingui
+     * @memberof quixot
+     */
     Mingui: {
-        notify: cross_notify,
+        /**
+         * for browsers the notify action will first try create a native html5 notification
+         * if domain protocol is "http" or "https". <br /> Second second approach will
+         * be to create a pop-up window. Please remember that second tryout will also
+         * apply if user native notifications are blocked from settings.<br />
+         * Finally, if the pop-up window is blocked, a simple html notification will
+         * be added to current document, styled by default with operating system colors. <br />
+         *
+         * For nodejs enviroments
+         * if java path is detected a spawned process wil start. (required java 1.8, this feature is still under developpement)
+         * @function
+         * @memberof quixot.Mingui
+         * @param title {String}
+         * @param text {String}
+         * @param picture {String}
+         * @param lifetime {Number}
+         * @param success {Function}
+         * @param failure {Function} although the method returns false due to known reasons, this callback is safe
+         *                           to use. For example, native html5 notification require user approval. In this case
+         *                           method will return false, but if user press "Allow" the "failure" callback
+         *                           will never be called
+         * @param onclick {Function} Attention!!! This callback may run without context in some implementations.
+         * @param onclose {Function} Attention!!! This callback may run without context in some implementations.
+         * @returns {Boolean|Object} false if notification fails to be displayed due to known reasons, an object with "remove()" method.
+         */
+        notify: cross_notify
     },
 
+    Http: {
+        request: http_request,
+        doGet:http_get,
+        doPost: http_post,
+        doPostXForm: http_post_x_form
+    },
+
+    /**
+     * Time utils
+     * @namespace Time
+     * @memberof quixot
+     */
+    Time: {
+        interval: time_interval,
+        dateAdd: time_date_add,
+        dateRoll: time_date_roll
+    },
+    GOG: gog_root,
+
+    /**
+     * Dulcineea - a legacy code friendly MVC
+     * @namespace Dulcineea
+     * @memberof quixot
+     */
+    Dulcineea: {
+        compiler: {
+            execute: _execute_js,
+            extract: extract_callers
+        },
+        templateRender : template_replace
+    },
     /**
      * require safe support: cached node js requirements <br />
      * TODO support for http://requirejs.org/
      * @memberof quixot
      */
     require: __require,
-    _performance: getPerformance,
-    _getmemodata: function () {
-        return memodata;
-    },
-    _getGL: function(){
-        return webGL;
+    packInfo: quixot_pack_info,
+    debug: {
+        atos_memodata: function () {
+            return _uat_memodata;
+        },
+        wGL: function () {
+            return  webGL;
+        }
     }
+
+
 }
 
 })();
+
 
 
 if(typeof module !='undefined') {

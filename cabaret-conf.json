@@ -27,8 +27,10 @@
       "inputFiles": [
         "lib/000_propfix.js",
         "lib/001_libinit.js",
+        "lib/001_var_definitions.js",
         "lib/002_fingerprint_data.js",
         "lib/003_utils.js",
+        "lib/003_timeutils.js",
         "lib/004_events.js",
         "lib/005_webgl_canvas.js",
         "lib/006_require.js",
@@ -43,10 +45,16 @@
         "lib/016_mingui.js",
         "lib/016_1html4notification.js",
         "lib/016_2html5notification.js",
+        "lib/16_3sysnotification.js",
         "lib/017_media.js",
         "lib/018_rtc.js",
         "lib/019_injectors.js",
         "lib/020_http.js",
+        "lib/021_dulcineea.js",
+        "lib/022_gog.js",
+        {
+          "content": "var quixot_pack_info = {version: \"{version}\", buildDate: \"{TIMESTAMP}\"};"
+        },
         "lib/_libEnd.js"
       ]
     }
@@ -55,12 +63,26 @@
     "args": [
       "{NODEJS_PATH}" ,
       "{jsdoc2md_PATH}",
-      "dist/quixot.js"
+      "lib/_libEnd.js"
     ],
     "outFile": "autodoc.md"
   },
   "axl.stf.cabaret.JsRun": {
       "file": "dist/quixot.js"
-  }
+  },
+  "axl.stf.cabaret.MapMin": [
+    {
+      "map": "min-map.properties",
+      "killWhiteSpaces": true,
+      "inputFiles": ["dist/quixot.js"],
+      "outputFiles": ["dist/quixot.js"]
+    }
+  ],
+  "axl.stf.cabaret.FCp": [
+    {
+      "inputFiles": ["tests.js"],
+      "outputFiles": ["../../../../../../../../../workdir/sources/js/qtest.js"]
+    }
+  ]
 
 }
