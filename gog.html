@@ -13,28 +13,26 @@
 
 <script>
 
-//    quixot.Event.appoint(function(){
-//        console.log('hi');
-//        document.getElementById('cerc').setAttribute('cx', 160);
-//    });
 
 
     var gog = quixot.GOG;
 
 
 
-    var stage = gog.getStage().width(800).height(800);
-
-//console.log(stage.getData());
-
+    var stage = gog.getStage().width(800).height(800).fill('red').fillScreen();
     var cerc = gog.newClip('circle').radius(40).x(50).y(50).stroke('green', 4).fill('yellow');
-//console.log(cerc.getData());
 
     stage.add(cerc);
-
     stage.update();
 
-    cerc.x(200).update();
+
+var pozX = 0;
+setInterval(function(){
+    cerc.x(pozX).update();
+    pozX++;
+},  100)
+
+
 
 </script>
 
