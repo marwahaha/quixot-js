@@ -20,7 +20,10 @@
     "smart tv",
     "Tizen",
     "time utils",
-    "MVC"
+    "MVC",
+    "enviroment independent",
+    "url decoding",
+    "logging"
   ],
   "author": "Alexandru Stefan",
   "license": "ISC",

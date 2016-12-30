@@ -43,6 +43,38 @@ eq(
 )
 
 
+eq(quixot.URL.getDomainFromUrl('https://www.mydomain.com/page?args=more'), "www.mydomain.com");
+
+eq(
+    quixot.URL.querify({a:1, b:[1, 2, 3], g:"text", c:{d:2, f:"some string"}}),
+    'a=1&b=[1,2,3]&g=text&c={"d":2,"f":"some string"}'
+)
+
+eq (
+    quixot.URL.decode('http://mydomain/page1/page2/finalPage?arg0=1,2,3&arg1=[1,2,3]').lastPage,
+    'finalPage'
+);
+
+
+eq (
+    quixot.URL.decode('protocol_test://mydomain/page1/page2/finalPage?arg0=1,2,3&arg1=[1,2,3]').protocol,
+    'protocol_test'
+);
+
+eq (
+    quixot.URL.decode('protocol_test://mydomain/page1/page2/finalPage?arg0=1,2,3&arg1=[1,2,3]').parts[2],
+    'page2'
+);
+
+eq (
+    quixot.URL.decode('protocol_test://mydomain/page1/page2/finalPage?arg0=1,2,3&arg1=[1,2,3]').params.arg1[0],
+    '[1'
+);
+
+eq (
+    quixot.URL.decode('protocol_test://mydomain/page1/page2/finalPage?arg0=1,2,3&arg1=[1,2,3]').params.arg0[0],
+    '1'
+);
 
 Sancho.deepEquals(dulcineea.compiler.extract('a.b.c'), ['a', 'b', 'c']);
 Sancho.deepEquals(dulcineea.compiler.extract('a[0]c'), ['a', '0', 'c']);
