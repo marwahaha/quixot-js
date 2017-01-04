@@ -6,9 +6,26 @@ if(typeof quixot === 'undefined'){
 }
 
 
+var a = [quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr(),
+    quixot.Util.randNr(), quixot.Util.randNr()];
 
-//load Sancho unit testing tools
+quixot.Sancho.noDuplicates(a);
+
+
+quixot.Sancho.donkey().burden(function (e) {
+    console.log(e, 'running');
+}).freeVal('console.log({string}, {number}, {number} + {number})', 4).run();
+
 var Sancho = quixot.Sancho, eq = Sancho.equals, time = quixot.Time, dulcineea = quixot.Dulcineea;
+
+
 
 eq(time.interval(1, 'nano'), 1);
 eq(time.interval(2, 'seconds'), 2 * 1000);
@@ -81,6 +98,22 @@ Sancho.deepEquals(dulcineea.compiler.extract('a[0]c'), ['a', '0', 'c']);
 Sancho.deepEquals(dulcineea.compiler.extract('a.b.c["prop"]d[23][\'data\']'), ['a', 'b', 'c', '"prop"', 'd', '23', '\'data\'']);
 
 eq(
+    quixot.Cookie.setc('test-cookie', 'test-cookie-value'),
+    'test-cookie=test-cookie-value'
+)
+
+eq (
+    quixot.Cookie.setc('test-cookie', 'test-cookie-value', null, 'path', 'domain', true),
+    "test-cookie=test-cookie-value; path=path; domain=domain; secure"
+)
+
+var date = new Date();
+eq (
+    quixot.Cookie.setc('test-cookie', 'test-cookie-value', date, 'path', 'domain', true),
+    "test-cookie=test-cookie-value; expires=" + quixot.Time.dateToString(date, 'cookie') + "; path=path; domain=domain; secure"
+)
+
+eq(
     dulcineea.compiler.execute('a', {a:1}),
     1
 )
@@ -104,7 +137,10 @@ eq(
     5
 )
 
-process.exit(-1);
+Sancho.hasProperty(quixot.Event.getAll(), 'events');
+Sancho.hasProperty(quixot.Event.getAll(), 'dispatchers');
+
+
 
 var myLogger = quixot.Logger.getInstance('myLogger', false, function (data) {
              console.log('my logger custom callback');
@@ -177,10 +213,11 @@ var testImages = [
     'https://raw.githubusercontent.com/alex2stf/quixot-js/master/img/salvador-dali-3.jpg'
 ];
 
-for(var i = 0; i < testImages.length; i++){
-    var title = 'Test notify (' + i + ')',
-        intval = ((i+1) * (i + 1)),
-        lifetime =  intval * 1000,
-        text = ' This notification has a lifetime of ' + intval + ' seconds',
-        notification =  quixot.Mingui.notify(title, text, testImages[i], lifetime);
-}
+// for(var i = 0; i < testImages.length; i++){
+//     var title = 'Test notify (' + i + ')',
+//         intval = ((i+1) * (i + 1)),
+//         lifetime =  intval * 1000,
+//         text = ' This notification has a lifetime of ' + intval + ' seconds',
+//         notification =  quixot.Mingui.notify(title, text, testImages[i], lifetime);
+// }
+

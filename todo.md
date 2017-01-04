@@ -15,7 +15,7 @@ quixot.Logger.setURLAccessKey('mySecretKey');
   log4CustomerSupport.trace('quixot.Logger.getInstance(\'log4CustomerSupport\').getLogs().trace');
 ```
 
-* ask your customer to access the webpage using the following query param: ```http://domain/custompage?mySecretKey={"log4CustomerSupport":{"fileAppender":true}}``` to view all logs of that specific logger or use ```mySecretKey={"log4CustomerSupport":{"info": {"fileAppender":true}} }``` to display on screen only info messages for ```log4CustomerSupport```. You can also use ```mySecretKey={"ALL":{"fileAppender":true}} ``` to view all logs
+* ask your customer to access the webpage using the following query param: ```http://domain/custompage?mySecretKey={"log4CustomerSupport":{"fileAppender":true, "consoleAppender":true}}``` to view all logs of that specific logger or use ```mySecretKey={"log4CustomerSupport":{"fileAppender":true} }``` to display on screen only info messages for ```log4CustomerSupport```. You can also use ```mySecretKey={"ALL":{"fileAppender":true}} ``` to view all logs
 
 
 
@@ -32,6 +32,3 @@ quixot.Logger.setURLAccessKey('mySecretKey');
 * unique property names of supported javascript features (check the .evilUtors) property
 * the ```evilUtors```  are a set of evaluable strings meant to return sensitive information about browser and javascript engine
 
-
-preview html test page:
-http://htmlpreview.github.io/?https://github.com/alex2stf/quixot-js/blob/master/tests.html

@@ -5,5 +5,12 @@
 
 *quixot.js mission is to provide a set of stable cross-platform and cross-engine features*
 
+###### what's new in version 1.0.2
+* safer Logger configuration via URL access key
+* Util.aton method
+* Cache instances lifetime support
+* Event namespace
+* Mingui namespace (full support for browsers, beta-testing java options)
+* Time namespace
 
 

@@ -5,9 +5,6 @@
 
 * [quixot](#quixot) : <code>object</code>
     * [.require](#quixot.require)
-    * [.Inject](#quixot.Inject) : <code>object</code>
-        * [.js](#quixot.Inject.js) ⇒ <code>Object</code>
-        * [.css](#quixot.Inject.css) ⇒ <code>Object</code>
     * [.Fingerprint](#quixot.Fingerprint) : <code>object</code>
         * [.data()](#quixot.Fingerprint.data) ⇒ <code>Object</code>
         * [.identifier()](#quixot.Fingerprint.identifier) ⇒ <code>String</code>
@@ -32,6 +29,8 @@
         * [.currentSearch()](#quixot.URL.currentSearch) ⇒ <code>String</code>
         * [.currentParams()](#quixot.URL.currentParams) ⇒ <code>Object</code>
     * [.Logger](#quixot.Logger) : <code>object</code>
+        * [.CONSOLE_APPENDER](#quixot.Logger.CONSOLE_APPENDER)
+        * [.DOM_APPENDER](#quixot.Logger.DOM_APPENDER)
         * [.info(message)](#quixot.Logger.info)
         * [.setDefaultConfig(config)](#quixot.Logger.setDefaultConfig)
         * [.getDefaultConfig()](#quixot.Logger.getDefaultConfig) ⇒ <code>Object</code>
@@ -44,25 +43,34 @@
         * [.setURLAccessKey(name)](#quixot.Logger.setURLAccessKey)
     * [.Cookie](#quixot.Cookie) : <code>object</code>
         * [.getc(name)](#quixot.Cookie.getc) ⇒ <code>String</code>
-        * [.setc(name, value, expires, path, domain, secure)](#quixot.Cookie.setc) ⇒ <code>string</code>
-        * [.drop(name, path, domain)](#quixot.Cookie.drop)
+        * [.setc(name, value, expires, path, domain, secure)](#quixot.Cookie.setc) ⇒ <code>String</code>
+        * [.drop(name, path, domain)](#quixot.Cookie.drop) ⇒ <code>String</code>
     * [.Util](#quixot.Util) : <code>object</code>
         * [.incr](#quixot.Util.incr) ⇒ <code>Number</code>
+        * [.randNr](#quixot.Util.randNr) ⇒ <code>Number</code>
+        * [.randInt](#quixot.Util.randInt) ⇒ <code>Number</code>
         * [.atos(data, mapping, zval)](#quixot.Util.atos) ⇒ <code>String</code>
         * [.aton(input, separator)](#quixot.Util.aton) ⇒ <code>String</code>
         * [.makeDomId(prefix)](#quixot.Util.makeDomId) ⇒ <code>String</code>
-        * [.randNr(min, max)](#quixot.Util.randNr) ⇒ <code>Number</code>
+        * [.randStr(mapping)](#quixot.Util.randStr) ⇒ <code>String</code>
     * [.Cache](#quixot.Cache) : <code>object</code>
-        * [.put(key, value)](#quixot.Cache.put)
+        * [.getInstance(instanceName, lifetime)](#quixot.Cache.getInstance) ⇒ <code>Object</code>
+        * [.put(key, value)](#quixot.Cache.put) ⇒ <code>Boolean</code>
     * [.Env](#quixot.Env) : <code>object</code>
     * [.System](#quixot.System) : <code>object</code>
         * [.os](#quixot.System.os) : <code>object</code>
     * [.Browser](#quixot.Browser) : <code>object</code>
     * [.Sancho](#quixot.Sancho) : <code>object</code>
+        * [.equals()](#quixot.Sancho.equals) ⇒ <code>Boolean</code>
+        * [.noDuplicates(list)](#quixot.Sancho.noDuplicates) ⇒ <code>Boolean</code>
     * [.Mingui](#quixot.Mingui) : <code>object</code>
         * [.notify(title, text, picture, lifetime, success, failure, onclick, onclose)](#quixot.Mingui.notify) ⇒ <code>Boolean</code> &#124; <code>Object</code>
     * [.Time](#quixot.Time) : <code>object</code>
+        * [.interval(count, type)](#quixot.Time.interval) ⇒ <code>Number</code>
     * [.Dulcineea](#quixot.Dulcineea) : <code>object</code>
+        * [.compiler](#quixot.Dulcineea.compiler) : <code>object</code>
+            * [.execute(caller, jsonData)](#quixot.Dulcineea.compiler.execute) ⇒ <code>Object</code>
+            * [.extract(input)](#quixot.Dulcineea.compiler.extract) ⇒ <code>Array</code>
 
 <a name="quixot.require"></a>
 
@@ -70,40 +78,6 @@
 require safe support: cached node js requirements <br />TODO support for http://requirejs.org/
 
 **Kind**: static property of <code>[quixot](#quixot)</code>  
-<a name="quixot.Inject"></a>
-
-### quixot.Inject : <code>object</code>
-**Kind**: static namespace of <code>[quixot](#quixot)</code>  
-
-* [.Inject](#quixot.Inject) : <code>object</code>
-    * [.js](#quixot.Inject.js) ⇒ <code>Object</code>
-    * [.css](#quixot.Inject.css) ⇒ <code>Object</code>
-
-<a name="quixot.Inject.js"></a>
-
-#### Inject.js ⇒ <code>Object</code>
-Method to insert a javascript tag using a src
-
-**Kind**: static property of <code>[Inject](#quixot.Inject)</code>  
-**Returns**: <code>Object</code> - an object with 2 properties:'script' = the inserted script object, and 'root' = the container  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| scriptSource | <code>String</code> | script source file |
-| callback | <code>Method</code> | the callback function |
-| toBottom | <code>Boolean</code> | if true, first it will check for body then for head |
-
-<a name="quixot.Inject.css"></a>
-
-#### Inject.css ⇒ <code>Object</code>
-**Kind**: static property of <code>[Inject](#quixot.Inject)</code>  
-**Returns**: <code>Object</code> - an object with 2 properties:'script' = the inserted css object, and 'root' = the container  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| cssPath | <code>String</code> | path to css |
-| callback | <code>Method</code> | function to call when css is loaded |
-
 <a name="quixot.Fingerprint"></a>
 
 ### quixot.Fingerprint : <code>object</code>
@@ -222,10 +196,11 @@ remove a registered event listener
 retrieve all registered events and dispacthers
 
 **Kind**: static method of <code>[Event](#quixot.Event)</code>  
+**Returns**: <code>Object</code> - containing 2 properties: events and dispatchers  
 <a name="quixot.Event.appoint"></a>
 
 #### Event.appoint(callback, delay) ⇒ <code>Object</code>
-appoint a method. If the environment is browser the appointment will be done via "requestAnimationFrame". <br />For NodeJS, method "setImmediate" will be used, so the "id" property of the result will be an object.
+appoint a method. If the environment is browser the appointment will be done via "_raf". <br />For NodeJS, method "setImmediate" will be used, so the "id" property of the result will be an object.
 
 **Kind**: static method of <code>[Event](#quixot.Event)</code>  
 **Returns**: <code>Object</code> - containing 2 properties: "type" => a string describing the used method for appointment (mozRequestAnimationFrame|setImmediate|setTimeout|nothing_found)and an "id" => the data return by the method. <br /> This can be used as parameter for  "dropAppoint".  
@@ -233,7 +208,7 @@ appoint a method. If the environment is browser the appointment will be done via
 | Param | Type | Description |
 | --- | --- | --- |
 | callback | <code>function</code> | required |
-| delay | <code>Number</code> | optional, used only for setTimeout |
+| delay | <code>Number</code> | optional, used only if browser has no support for "animationFrame" and a setTimeout will be used. <br /> If not provided, a default value of 30 will be used. |
 
 <a name="quixot.Event.dropAppoint"></a>
 
@@ -241,12 +216,16 @@ appoint a method. If the environment is browser the appointment will be done via
 cancel an appoint. Usage of this method should be avoided, since further changes on "appoint" method mightreturn undroppable callbacks.
 
 **Kind**: static method of <code>[Event](#quixot.Event)</code>  
-**Returns**: <code>Boolean</code> - false if "id" is not provided or is invalud  
+**Returns**: <code>Boolean</code> - false if "id" is not provided or is invalid  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | id | <code>Object</code> &#124; <code>Number</code> | required |
 
+**Example**  
+```js
+var result = quixot.Event.appoint(function(){console.log('hi')}, 0);quixot.Event.dropAppoint(result.id); //and nothing will happen
+```
 <a name="quixot.URL"></a>
 
 ### quixot.URL : <code>object</code>
@@ -363,6 +342,8 @@ var myLogger = quixot.Logger.getInstance('TestLogger');  myLogger.log('info', '
 ```
 
 * [.Logger](#quixot.Logger) : <code>object</code>
+    * [.CONSOLE_APPENDER](#quixot.Logger.CONSOLE_APPENDER)
+    * [.DOM_APPENDER](#quixot.Logger.DOM_APPENDER)
     * [.info(message)](#quixot.Logger.info)
     * [.setDefaultConfig(config)](#quixot.Logger.setDefaultConfig)
     * [.getDefaultConfig()](#quixot.Logger.getDefaultConfig) ⇒ <code>Object</code>
@@ -374,32 +355,66 @@ var myLogger = quixot.Logger.getInstance('TestLogger');  myLogger.log('info', '
     * [.getInstance(instancename, config)](#quixot.Logger.getInstance) ⇒ <code>Object</code>
     * [.setURLAccessKey(name)](#quixot.Logger.setURLAccessKey)
 
+<a name="quixot.Logger.CONSOLE_APPENDER"></a>
+
+#### Logger.CONSOLE_APPENDER
+default console appender function
+
+**Kind**: static property of <code>[Logger](#quixot.Logger)</code>  
+**Properties**
+
+| Type |
+| --- |
+| <code>function</code> | 
+
+<a name="quixot.Logger.DOM_APPENDER"></a>
+
+#### Logger.DOM_APPENDER
+default html appender function
+
+**Kind**: static property of <code>[Logger](#quixot.Logger)</code>  
+**Properties**
+
+| Type |
+| --- |
+| <code>function</code> | 
+
 <a name="quixot.Logger.info"></a>
 
 #### Logger.info(message)
+info logging using default instance
+
 **Kind**: static method of <code>[Logger](#quixot.Logger)</code>  
 
-| Param | Type |
-| --- | --- |
-| message | <code>Object</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| message | <code>Object</code> | required |
 
 <a name="quixot.Logger.setDefaultConfig"></a>
 
 #### Logger.setDefaultConfig(config)
+define default configuration for all newly created logging instances
+
 **Kind**: static method of <code>[Logger](#quixot.Logger)</code>  
 
-| Param | Type |
-| --- | --- |
-| config | <code>Object</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| config | <code>Object</code> | optional keys |
 
+**Example**  
+```js
+//built in definition:quixot.Logger.setDefaultConfig({     appenders: // a list of callbacks     [ function(name, level, payload){         //=> where payload has the following structure:         {             timestamp: {Date},             message: {Object|String|Number} -> as called by client,             stack: {Array} -> stack data             caller: {Function} -> only if exists         }     } ],     logStack: true})
+```
 <a name="quixot.Logger.getDefaultConfig"></a>
 
 #### Logger.getDefaultConfig() ⇒ <code>Object</code>
 **Kind**: static method of <code>[Logger](#quixot.Logger)</code>  
-**Returns**: <code>Object</code> - logger_defaultConfiguration  
+**Returns**: <code>Object</code> - logger default configuration  
 <a name="quixot.Logger.trace"></a>
 
 #### Logger.trace(message)
+trace logging using default instance
+
 **Kind**: static method of <code>[Logger](#quixot.Logger)</code>  
 
 | Param | Type |
@@ -409,6 +424,8 @@ var myLogger = quixot.Logger.getInstance('TestLogger');  myLogger.log('info', '
 <a name="quixot.Logger.error"></a>
 
 #### Logger.error(message)
+error logging using default instance
+
 **Kind**: static method of <code>[Logger](#quixot.Logger)</code>  
 
 | Param | Type |
@@ -418,6 +435,8 @@ var myLogger = quixot.Logger.getInstance('TestLogger');  myLogger.log('info', '
 <a name="quixot.Logger.warn"></a>
 
 #### Logger.warn(message)
+warn logging using default instance
+
 **Kind**: static method of <code>[Logger](#quixot.Logger)</code>  
 
 | Param | Type |
@@ -449,12 +468,12 @@ returns a new logger instance
 
 **Example**  
 ```js
-var myLogger = quixot.Logger.getInstance('TestLogger');
+var myLogger = quixot.Logger.getInstance('TestLogger');myLogger.setConfig(     {         appenders: [                   function(name, level, data){                         console.log(arguments);                 }         ]   })
 ```
 <a name="quixot.Logger.setURLAccessKey"></a>
 
 #### Logger.setURLAccessKey(name)
-set the value for accessing logger configuration from URL.If is set to ``` false```, no configuartion canbe changed by using URL parameters
+set the value for accessing logger configuration from URL. This feature is avaiable only forbrowser environments. <br />If is set to ``` false```, no configuration canbe changed by using URL parameters. The url query opbject can contain only 2 properties:"consoleAppender", to use quixot default console appender as defined by quixot.Logger.CONSOLE_APPENDERand "fileAppender",  to use quixot default dom appender as defined by quixot.Logger.DOM_APPENDER.
 
 **Kind**: static method of <code>[Logger](#quixot.Logger)</code>  
 
@@ -469,17 +488,22 @@ set the value for accessing logger configuration from URL.If is set to ``` fals
 <a name="quixot.Cookie"></a>
 
 ### quixot.Cookie : <code>object</code>
+The following namespace has no effect in non-browser environments, although is unit testable
+
 **Kind**: static namespace of <code>[quixot](#quixot)</code>  
 
 * [.Cookie](#quixot.Cookie) : <code>object</code>
     * [.getc(name)](#quixot.Cookie.getc) ⇒ <code>String</code>
-    * [.setc(name, value, expires, path, domain, secure)](#quixot.Cookie.setc) ⇒ <code>string</code>
-    * [.drop(name, path, domain)](#quixot.Cookie.drop)
+    * [.setc(name, value, expires, path, domain, secure)](#quixot.Cookie.setc) ⇒ <code>String</code>
+    * [.drop(name, path, domain)](#quixot.Cookie.drop) ⇒ <code>String</code>
 
 <a name="quixot.Cookie.getc"></a>
 
 #### Cookie.getc(name) ⇒ <code>String</code>
+retrieve a cookie with provided name.
+
 **Kind**: static method of <code>[Cookie](#quixot.Cookie)</code>  
+**Returns**: <code>String</code> - if the cookie does not exist, result is null  
 
 | Param | Type |
 | --- | --- |
@@ -487,32 +511,38 @@ set the value for accessing logger configuration from URL.If is set to ``` fals
 
 <a name="quixot.Cookie.setc"></a>
 
-#### Cookie.setc(name, value, expires, path, domain, secure) ⇒ <code>string</code>
+#### Cookie.setc(name, value, expires, path, domain, secure) ⇒ <code>String</code>
 create a new cookie
 
 **Kind**: static method of <code>[Cookie](#quixot.Cookie)</code>  
+**Returns**: <code>String</code> - the composed cookie string  
 
-| Param | Type |
-| --- | --- |
-| name | <code>String</code> | 
-| value | <code>String</code> | 
-| expires | <code>Date</code> &#124; <code>Number</code> | 
-| path | <code>String</code> | 
-| domain | <code>String</code> | 
-| secure | <code>Boolean</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| name | <code>String</code> | required name of the cookie |
+| value | <code>String</code> | required value of the cookie |
+| expires | <code>Date</code> &#124; <code>Number</code> | expire date. This parameter can also be provided via "Time" namespace |
+| path | <code>String</code> | optional |
+| domain | <code>String</code> | optional |
+| secure | <code>Boolean</code> | optional |
 
+**Example**  
+```js
+quixot.Cookie.setc(     'test-cookie', 'test-cookie-value',     quixot.Time.interval(1, 'month'),     'path', 'domain', true); //based on client timestamp, might return //"test-cookie=test-cookie-value; expires=Tue, 03 Jan 2017 10:41:31 GMT; path=path; domain=domain; secure"
+```
 <a name="quixot.Cookie.drop"></a>
 
-#### Cookie.drop(name, path, domain)
-delete cookie
+#### Cookie.drop(name, path, domain) ⇒ <code>String</code>
+delete a cookie
 
 **Kind**: static method of <code>[Cookie](#quixot.Cookie)</code>  
+**Returns**: <code>String</code> - empty string  
 
-| Param | Type |
-| --- | --- |
-| name | <code>String</code> | 
-| path | <code>String</code> | 
-| domain | <code>String</code> | 
+| Param | Type | Description |
+| --- | --- | --- |
+| name | <code>String</code> | required |
+| path | <code>String</code> | optional |
+| domain | <code>String</code> | optional |
 
 <a name="quixot.Util"></a>
 
@@ -521,10 +551,12 @@ delete cookie
 
 * [.Util](#quixot.Util) : <code>object</code>
     * [.incr](#quixot.Util.incr) ⇒ <code>Number</code>
+    * [.randNr](#quixot.Util.randNr) ⇒ <code>Number</code>
+    * [.randInt](#quixot.Util.randInt) ⇒ <code>Number</code>
     * [.atos(data, mapping, zval)](#quixot.Util.atos) ⇒ <code>String</code>
     * [.aton(input, separator)](#quixot.Util.aton) ⇒ <code>String</code>
     * [.makeDomId(prefix)](#quixot.Util.makeDomId) ⇒ <code>String</code>
-    * [.randNr(min, max)](#quixot.Util.randNr) ⇒ <code>Number</code>
+    * [.randStr(mapping)](#quixot.Util.randStr) ⇒ <code>String</code>
 
 <a name="quixot.Util.incr"></a>
 
@@ -542,6 +574,36 @@ increments an unique number (old value is cached)
 ```js
 quixot.Util.incr(true); // 30.07000000000001quixot.Util.incr();    // 31
 ```
+<a name="quixot.Util.randNr"></a>
+
+#### Util.randNr ⇒ <code>Number</code>
+if no parameters are provided a currentTimestamp value will be returned. id method is called twicein less than a milisecond, a quixot.Util.incr() value will be returned to make sure return valuesare avoided
+
+**Kind**: static property of <code>[Util](#quixot.Util)</code>  
+**Returns**: <code>Number</code> - float  
+
+| Param | Description |
+| --- | --- |
+| min | limit range if "max" is not provided |
+| max | limit range |
+
+**Example**  
+```js
+quixot.Util.randNr(3); // will generate numbers betwen 0 and 3, like 0.6573690931544247quixot.Util.randNr(2, 4); // will generate numbers betwen 2 and 4, like 2.3124963172024833quixot.Util.randNr(-5); // will generate numbers betwen -5 and 0, like -4.3664502906423195
+```
+<a name="quixot.Util.randInt"></a>
+
+#### Util.randInt ⇒ <code>Number</code>
+same usage as "randNr", only it returns an integer
+
+**Kind**: static property of <code>[Util](#quixot.Util)</code>  
+**Returns**: <code>Number</code> - float  
+
+| Param |
+| --- |
+| min | 
+| max | 
+
 <a name="quixot.Util.atos"></a>
 
 #### Util.atos(data, mapping, zval) ⇒ <code>String</code>
@@ -587,40 +649,54 @@ generates an unique id that begins with a letter ([A-Za-z])and may be followed 
 | --- | --- | --- |
 | prefix | <code>String</code> | optional, a prefix to be appended at the begging of the string |
 
-<a name="quixot.Util.randNr"></a>
+<a name="quixot.Util.randStr"></a>
 
-#### Util.randNr(min, max) ⇒ <code>Number</code>
-if no parameters are provided a quixot.Util.incr() value will be returned
+#### Util.randStr(mapping) ⇒ <code>String</code>
+generates a random string
 
 **Kind**: static method of <code>[Util](#quixot.Util)</code>  
-**Returns**: <code>Number</code> - as float  
+**Returns**: <code>String</code> - a random string  
 
-| Param | Description |
-| --- | --- |
-| min | limit range if "max" is not provided |
-| max | limit range |
+| Param | Type | Description |
+| --- | --- | --- |
+| mapping | <code>String</code> | a string whose characters will be used for encoding. <br /> Same usage as for "atos" method |
 
-**Example**  
-```js
-quixot.Util.randNr(3); // will generate numbers betwen 0 and 3, like 0.6573690931544247quixot.Util.randNr(2, 4); // will generate numbers betwen 2 and 4, like 2.3124963172024833quixot.Util.randNr(-5); // will generate numbers betwen -5 and 0, like -4.3664502906423195
-```
 <a name="quixot.Cache"></a>
 
 ### quixot.Cache : <code>object</code>
 supports browser && nodejs
 
 **Kind**: static namespace of <code>[quixot](#quixot)</code>  
-<a name="quixot.Cache.put"></a>
 
-#### Cache.put(key, value)
-put item in cache
+* [.Cache](#quixot.Cache) : <code>object</code>
+    * [.getInstance(instanceName, lifetime)](#quixot.Cache.getInstance) ⇒ <code>Object</code>
+    * [.put(key, value)](#quixot.Cache.put) ⇒ <code>Boolean</code>
+
+<a name="quixot.Cache.getInstance"></a>
+
+#### Cache.getInstance(instanceName, lifetime) ⇒ <code>Object</code>
+caching instances factory
 
 **Kind**: static method of <code>[Cache](#quixot.Cache)</code>  
+**Returns**: <code>Object</code> - a new or an existing caching instance  
+
+| Param | Type |
+| --- | --- |
+| instanceName | <code>String</code> | 
+| lifetime | <code>Number</code> | 
+
+<a name="quixot.Cache.put"></a>
+
+#### Cache.put(key, value) ⇒ <code>Boolean</code>
+put item inside default cache instance
+
+**Kind**: static method of <code>[Cache](#quixot.Cache)</code>  
+**Returns**: <code>Boolean</code> - true if cache is populated  
 
 | Param | Type |
 | --- | --- |
 | key | <code>String</code> | 
-| value | <code>String</code> &#124; <code>Number</code> | 
+| value | <code>String</code> &#124; <code>Number</code> &#124; <code>Array</code> &#124; <code>Object</code> | 
 
 <a name="quixot.Env"></a>
 
@@ -667,9 +743,40 @@ quixot.Browser.name; (Chrome|Firefox|Explorer|Opera|iCab|rekonq|Midori|Arora|Sta
 <a name="quixot.Sancho"></a>
 
 ### quixot.Sancho : <code>object</code>
-the unit testing namespace
+the unit testing namespace.
 
 **Kind**: static namespace of <code>[quixot](#quixot)</code>  
+
+* [.Sancho](#quixot.Sancho) : <code>object</code>
+    * [.equals()](#quixot.Sancho.equals) ⇒ <code>Boolean</code>
+    * [.noDuplicates(list)](#quixot.Sancho.noDuplicates) ⇒ <code>Boolean</code>
+
+<a name="quixot.Sancho.equals"></a>
+
+#### Sancho.equals() ⇒ <code>Boolean</code>
+For NodeJS environment, built-in 'assert' library will be used.
+
+**Kind**: static method of <code>[Sancho](#quixot.Sancho)</code>  
+**Returns**: <code>Boolean</code> - true if test is passed  
+**Example**  
+```js
+quixot.Sancho.equals(1, 1);
+```
+<a name="quixot.Sancho.noDuplicates"></a>
+
+#### Sancho.noDuplicates(list) ⇒ <code>Boolean</code>
+verify if a list contains no duplicates
+
+**Kind**: static method of <code>[Sancho](#quixot.Sancho)</code>  
+
+| Param | Type |
+| --- | --- |
+| list | <code>Array</code> | 
+
+**Example**  
+```js
+quixot.Sancho.noDuplicates([1, 8, 3, 4, 9, 7, 2 ])
+```
 <a name="quixot.Mingui"></a>
 
 ### quixot.Mingui : <code>object</code>
@@ -701,9 +808,68 @@ for browsers the notify action will first try create a native html5 notification
 Time utils
 
 **Kind**: static namespace of <code>[quixot](#quixot)</code>  
+<a name="quixot.Time.interval"></a>
+
+#### Time.interval(count, type) ⇒ <code>Number</code>
+**Kind**: static method of <code>[Time](#quixot.Time)</code>  
+**Returns**: <code>Number</code> - the value in milliseconds of required parameters  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| count | <code>Number</code> | required |
+| type | <code>String</code> | required, one of (nano|second|minute|hour|day|month|year) |
+
+**Example**  
+```js
+quixot.Time.interval(4, 'year'); // returns 126144000000
+```
 <a name="quixot.Dulcineea"></a>
 
 ### quixot.Dulcineea : <code>object</code>
-Dulcineea - a legacy code friendly MVC
-
 **Kind**: static namespace of <code>[quixot](#quixot)</code>  
+
+* [.Dulcineea](#quixot.Dulcineea) : <code>object</code>
+    * [.compiler](#quixot.Dulcineea.compiler) : <code>object</code>
+        * [.execute(caller, jsonData)](#quixot.Dulcineea.compiler.execute) ⇒ <code>Object</code>
+        * [.extract(input)](#quixot.Dulcineea.compiler.extract) ⇒ <code>Array</code>
+
+<a name="quixot.Dulcineea.compiler"></a>
+
+#### Dulcineea.compiler : <code>object</code>
+**Kind**: static namespace of <code>[Dulcineea](#quixot.Dulcineea)</code>  
+
+* [.compiler](#quixot.Dulcineea.compiler) : <code>object</code>
+    * [.execute(caller, jsonData)](#quixot.Dulcineea.compiler.execute) ⇒ <code>Object</code>
+    * [.extract(input)](#quixot.Dulcineea.compiler.extract) ⇒ <code>Array</code>
+
+<a name="quixot.Dulcineea.compiler.execute"></a>
+
+##### compiler.execute(caller, jsonData) ⇒ <code>Object</code>
+executes a call for a JSON formatted object
+
+**Kind**: static method of <code>[compiler](#quixot.Dulcineea.compiler)</code>  
+
+| Param | Type |
+| --- | --- |
+| caller | <code>String</code> | 
+| jsonData | <code>Object</code> &#124; <code>JSON</code> | 
+
+**Example**  
+```js
+quixot.Dulcineea.compiler.execute('a.b', {a:{b: 1}});//returns "1"
+```
+<a name="quixot.Dulcineea.compiler.extract"></a>
+
+##### compiler.extract(input) ⇒ <code>Array</code>
+converts a string into a list of valid JSON callers
+
+**Kind**: static method of <code>[compiler](#quixot.Dulcineea.compiler)</code>  
+
+| Param | Type |
+| --- | --- |
+| input | <code>String</code> | 
+
+**Example**  
+```js
+quixot.Dulcineea.compiler.extract('a.b.c'); //returns ['a', 'b', 'c']quixot.Dulcineea.compiler.extract('a.b[0]c["data"]'); //returns ["a", "b", "0", "c", "'data'"]
+```

@@ -13,14 +13,15 @@
       "outputFiles": [
         {
           "path": "../../../../../../../../../workdir/sources/js/quixot-{version}-min.js",
-          "writers": [ "axl.stf.cabaret.validate.GCWriter" ]
+          "writers": [ "axl.stf.cabaret.MapMin", "axl.stf.cabaret.validate.GCWriter" ]
         },
         {
-          "path":  "dist/quixot.js"
+          "path": "dist/quixot.js",
+          "writers": [ "axl.stf.cabaret.MapMin"]
         },
         {
           "path": "dist/quixot-{version}-min.js",
-          "writers": [ "axl.stf.cabaret.validate.GCWriter" ]
+          "writers": [ "axl.stf.cabaret.MapMin", "axl.stf.cabaret.validate.GCWriter" ]
         }
       ],
 
@@ -70,14 +71,6 @@
   "axl.stf.cabaret.JsRun": {
       "file": "dist/quixot.js"
   },
-  "axl.stf.cabaret.MapMin": [
-    {
-      "map": "min-map.properties",
-      "killWhiteSpaces": true,
-      "inputFiles": ["dist/quixot.js"],
-      "outputFiles": ["dist/quixot.js"]
-    }
-  ],
   "axl.stf.cabaret.FCp": [
     {
       "inputFiles": ["tests.js"],

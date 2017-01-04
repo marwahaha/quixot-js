@@ -1,8 +1,3 @@
-/**
- * fixers for any js engine
- */
-
-
 
 if(typeof console === 'undefined') {
     console = {};
@@ -283,6 +278,9 @@ var $S = (typeof 'string') + '',
         return {};
     })(),
 
+
+
+
     $bd = (function(){
         if(typeof window != 'undefined' && typeof document != 'undefined'){
             return document;
@@ -321,11 +319,11 @@ var $S = (typeof 'string') + '',
         return (typeof module !== 'undefined' && module.exports)
     })(),
 
-    document_getElementById = function (i) {
+    _dGe = function (i) {
         return document.getElementById(i);
     },
 
-    document_createElement = function (n, i, s, h) {
+    _dCE = function (n, i, s, h) {
         var d = document.createElement(n);
         if(i){
             d.id = i;
@@ -342,26 +340,33 @@ var $S = (typeof 'string') + '',
         return d;
     },
 
-    document_getElementSafe = function (n, i, s, h) {
-        if(document_getElementById(i)){
-            return document_getElementById(i);
+    _dGs = function (n, i, s, h) {
+        if(_dGe(i)){
+            return _dGe(i);
         }
-        var d = document_createElement(n, i, s, h);
+        var d = _dCE(n, i, s, h);
         _gba().appendChild(d);
         return d;
-    }
+    },
 
     $p = [],
         
     _mr = Math.round,
     _mf = Math.floor,
-    json_parse = JSON.parse,
-        json_stringify = JSON.stringify
+        _mR = Math.random,
+    _jp = JSON.parse,
+    _js = JSON.stringify,
+    $DU = (function () {
+        return $bd.URL || '';
+    })(),
+
+        $dK = ($bd.cookie || ''),
+        $lUd = new Date();
 
 
     ;
 
-var $W, $bb, $K, $BN, $bV, javaEnabled;
+var $W, $bb, $WSub, $BN, $bV, javaEnabled;
 
 for(var i = 0; i < $eU.length; i++) {
     try {
@@ -560,27 +565,42 @@ function _usa(obj, stackno) {
 }
 
 
-function util_array_each(a, c){
+function _uae(a, c){
     for(var i = 0; i < a.length; i++){
         c(i, a[i])
     }
 }
 
-function util_obj_each(o, c){
+function _uoe(o, c){
     for(var i in o){
         c(i, o[i]);
     }
 }
 
 function _sgp(){
-    return window.performance || window.mozPerformance || window.msPerformance || window.webkitPerformance || {};
+    return $bw.performance ||
+        $bw.mozPerformance ||
+        $bw.msPerformance ||
+        $bw.webkitPerformance || {};
 }
 
 
 function _uip(d){
-    return (typeof d === $S || typeof d === $N || typeof d === $B);
+    return ( util_isNumber(d) || typeof d === $S || typeof d === $N || typeof d === $B);
 }
 
+function util_isNumber(n) {
+    return !isNaN(n);
+}
+
+function util_isDate(o) {
+    if(o && o.getTime && o.setTime){
+        return util_isNumber(o.getTime());
+    }
+
+    return false;
+
+}
 
 function _uif(d){
     return typeof d === $F;
@@ -595,7 +615,11 @@ function _uiac(c){
 }
 
 function _uat(numval, strlist, zval) {
-    
+
+    if(numval < 0){
+        numval = Math.abs(numval);
+    }
+
     if(!zval) {
         zval = 0;
     }
@@ -643,7 +667,7 @@ function _uat(numval, strlist, zval) {
 
 
     if(!(+numval) || numval instanceof Date) {
-        numval = numval+''; //force
+        numval = numval+'';
         response = numval.split('')[0];
         rest = numval.substring(1, numval.length);
 
@@ -732,7 +756,7 @@ function util_aton(i, s){
     }
 
     var p = (i+'').split(''), r = '';
-    util_array_each(i, function(j, o) {
+    _uae(i, function(j, o) {
 
 
         if(s && j > 0){
@@ -765,7 +789,93 @@ function util_strip_quotes(_key) {
     return _key;
 }
 
-function time_interval(n, s) {
+function util_array_shuffle(array) {
+    var currentIndex = array.length, temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+}
+
+
+
+function util_random_string(_strlist) {
+
+    var _date = new Date(), _methods = ['Date', 'Milliseconds', 'Minutes',
+        'Day', 'Date', 'Month', 'FullYear', 'Year', 'TimezoneOffset'],
+        _str_date = _date + '',
+        _sum = _uat(util_randNr(0, 999999999), _strlist) + '';
+    _methods = util_array_shuffle(_methods);
+        _uae(_methods, function (_index, _item) {
+            var _value = null;
+            try {
+                console.log('calling date get'+ _item);
+                _value = _date['get' + _item]();
+            } catch (_exception){
+              _value = null;
+            } finally {
+                if(_value != null){
+                    _sum += _uat(_value, _strlist) + '';
+                }
+            }
+        });
+    $lUd = _date;
+    return _sum;
+
+}
+
+
+
+function util_incr(asfloat) {
+    if (asfloat) {
+        $Ov+=0.01;
+    } else {
+        $Ov = parseInt($Ov+1);
+    }
+    cache_getInstance('@qtst').put('lup', $Ov);
+    return $Ov;
+}
+
+
+function util_randInt(min, max) {
+    return _mr(util_randNr(min, max))
+}
+
+
+
+
+function util_randNr(min, max) {
+    if(min || (min === 0 && +max) ){
+        if(!+min) {
+            min = 1;
+        }
+
+        if(max){
+            if(!+max) {
+                max = 2;
+            }
+            return min + (_mR() * (max - min) );
+        }
+
+        return (_mR() * min);
+    }
+
+
+    return time_next_date().getTime();
+
+}
+function _ti(n, s) {
     switch(s+''.toLowerCase()) {
         case 'nano':
             return n;
@@ -774,19 +884,19 @@ function time_interval(n, s) {
             return n * 1000;
         case 'minutes':
         case 'minute':
-            return n * time_interval(60, 'seconds');
+            return n * _ti(60, 'seconds');
         case 'hour':
         case 'hours':
-              return n * time_interval(60, 'minute');
+              return n * _ti(60, 'minute');
         case 'day':
         case 'days':
-            return n * time_interval(24, 'hour');
+            return n * _ti(24, 'hour');
         case 'month':
         case 'months':
-              return n * time_interval(30, 'day');
+              return n * _ti(30, 'day');
         case 'year':
         case 'years':
-              return n * time_interval(365, 'day');
+              return n * _ti(365, 'day');
 
     }
 
@@ -794,18 +904,64 @@ function time_interval(n, s) {
 }
 
 
-function time_date_add(d, n, s){
-    if(d.getTime && d.setTime){
-        d.setTime(d.getTime() + time_interval(n, s));
+function _tda(d, n, s){
+    if(util_isDate(d) && util_isNumber(n) && s){
+        d.setTime(d.getTime() + _ti(n, s));
+    }
+
+    if(util_isDate(d) && util_isNumber(n) && !s){
+        d.setTime(d.getTime() + n);
     }
     return d;
 }
 
-function time_date_roll(d, n, s){
-    if(d.getTime && d.setTime){
-        d.setTime(d.getTime() - time_interval(n, s));
+function _tdr(d, n, s){
+    if(util_isDate(d) && util_isNumber(n) && s){
+        d.setTime(d.getTime() - _ti(n, s));
+    }
+
+    if(util_isDate(d) && util_isNumber(n) && !s){
+        d.setTime(d.getTime() - n);
     }
     return d;
+}
+
+
+function _tds(d, m) {
+    if(m === 'cookie'){
+        if(d.toUTCString){
+            return d.toUTCString();
+        }
+
+        if(d.toGMTString){
+            return d.toGMTString();
+        }
+
+        if(d.toString()){
+            return d.toString();
+        }
+
+        return d+'';
+    }
+}
+
+
+function _dD(l,r) {
+    if(l.getTime && r.getTime){
+        return l.getTime() - r.getTime();
+    }
+    return 0;
+}
+
+
+function time_next_date() {
+    var _date = new Date();
+    while(_dD(_date, $lUd) <=0 ){
+        _tda(_date, 1);
+    }
+
+    $lUd = _date;
+    return _date;
 }
 function _ed(eventName) {
     if (!eventDispatchers[eventName]) {
@@ -835,7 +991,7 @@ function _ed(eventName) {
 }
 
 
-function hasEventListener(eventName, uidName) {
+function _hEL(eventName, uidName) {
     if (!registeredEvents[eventName]) {
         return false;
     }
@@ -852,7 +1008,7 @@ function hasEventListener(eventName, uidName) {
 }
 
 
-function addEventListener(eventName, callback, uidName) {
+function _aEL(eventName, callback, uidName) {
     if (!uidName) {
         uidName = callback + '';
     }
@@ -868,7 +1024,7 @@ function addEventListener(eventName, callback, uidName) {
 }
 
 
-function removeEventListener(eventName, uidName) {
+function _rEL(eventName, uidName) {
     if (registeredEvents[eventName]) {
         return false;
     }
@@ -889,7 +1045,7 @@ function removeEventListener(eventName, uidName) {
 }
 
 
-function removeAnimationFrame(i) {
+function _rAF(i) {
     if(!i){
         return false;
     }
@@ -921,7 +1077,7 @@ function removeAnimationFrame(i) {
 
 
 
-function requestAnimationFrame(callback, delay) {
+function _raf(callback, delay) {
     var type = 'unknown', thisLoop =  new Date().getTime(), fps, timeoutId;
     if(!delay){
         delay = 30;
@@ -959,7 +1115,7 @@ function requestAnimationFrame(callback, delay) {
         callback();
     }
 
-    _ed('quixot_event_appointment_done');
+    _ed('quixot__rafment_done');
 
     return {
         type: type,
@@ -968,16 +1124,16 @@ function requestAnimationFrame(callback, delay) {
 }
 
 
-function getAllEvents() {
+function _gae() {
     return {
         events: registeredEvents,
         dispatchers: eventDispatchers
     }
 }var webGL = false;
 
-if ($bd.createElement) {
+if ($eb) {
     try {
-        var canvas = $bd.createElement('canvas');
+        var canvas = _dCE('canvas');
 
         if(canvas.getContext('webgl')) {
             $F.webgctx = 'webgl';
@@ -1065,12 +1221,12 @@ function __require(modulename) {
 /**
  * TODO suport unescape...
  */
-function _udURI(strd) {
+function _uDU(strd) {
     return decodeURIComponent(strd)
 }
 
 
-function url_getValFromHttpParam(val) {
+function _uHp(val) {
     if(val.indexOf && val.indexOf(',') > -1) {
         return (val+'').split(',')
     }
@@ -1080,7 +1236,7 @@ function url_getValFromHttpParam(val) {
 
     var obj =null;
     try {
-        obj = json_parse(_udURI(val));
+        obj = _jp(_uDU(val));
     } catch (ex){
         obj = null;
     } finally {
@@ -1094,7 +1250,7 @@ function url_getValFromHttpParam(val) {
 
 
 
-function _ud(url){
+function _ux(url){
     if (!url) {
         return null;
     }
@@ -1122,7 +1278,7 @@ function _ud(url){
             for (var i = 0; i < parts.length; i++) {
                 var keyVal = parts[i].split('=');
                 if (keyVal.length > 1) {
-                    response[keyVal[0]] = url_getValFromHttpParam(keyVal[1]);
+                    response[keyVal[0]] = _uHp(keyVal[1]);
                 } else {
                     response[keyVal[0]] = false;
                 }
@@ -1142,8 +1298,8 @@ function _ud(url){
 
 
 function _ucp() {
-    if(typeof document != 'undefined'){
-        return url_get_params(document.URL);
+    if($DU){
+        return _ugp($DU);
     }
     return {
         params: {}
@@ -1151,21 +1307,21 @@ function _ucp() {
 }
 
 
-function url_current_search() {
-    if(typeof  window != 'undefined' &&  window.location &&  window.location.search){
-        return  window.location.search
+function _ucS() {
+    if($bw.location &&  $bw.location.search){
+        return  $bw.location.search
     }
     return '';
 }
 
 
-function url_get_params(url) {
-    return _ud(url).params;
+function _ugp(url) {
+    return _ux(url).params;
 }
 
 
 
-function url_getDomainFromUrl(url){
+function _uDR(url){
     url = url + '';
     var domain = (url.indexOf('://') > -1) ? url.split('/')[2] : url.split('/')[0];
     if(domain){
@@ -1175,25 +1331,25 @@ function url_getDomainFromUrl(url){
 }
 
 
-function url_currentDomain() {
+function _uCD() {
     if($bd.domain){
         return $bd.domain;
     }
-    if($bd.URL){
-        return url_getDomainFromUrl($bd.URL);
+    if($DU){
+        return _uDR($DU);
     }
     return 'localhost';
 }
 
 
-function url_current_path() {
+function _uCP() {
     if($bw.location && $bw.location.pathname){
         return $bw.location.pathname
     }
     return '';
 }
 
-function url_querify(object) {
+function _uQ(object) {
     var cont = [], text = '';
     if (object != null){
         for (var i in object) {
@@ -1201,7 +1357,7 @@ function url_querify(object) {
                 
                 cont.push({
                     pp: i,
-                    vl: util_strip_quotes(json_stringify(object[i]))
+                    vl: util_strip_quotes(_js(object[i]))
                 });
             }
         }
@@ -1213,15 +1369,19 @@ function url_querify(object) {
         }
         return text;
     }
-}
+}var logger_defaultConfiguration = {
+        appenders: [_lda, logger_default_console_appender],
+        logStack: true
+    },
+    logger_options_key = 'logopts';
 
 
-    function _ldda(n, l, d) {
+    function _lda(n, l, d) {
         if(!$eb){
             return;
         }
         var v, i= 'qfa', dc = document, r = ' (<i><b>' + n + '</b></i> : ' + d.timestamp + ')';
-        v = document_getElementSafe('div', 'qfa', {
+        v = _dGs('div', 'qfa', {
             border: '1px solid black',
             margin : '2%',
             padding : '1%'
@@ -1242,55 +1402,43 @@ function url_querify(object) {
             default:
                 t+='black';
         }
-        t+='"> <b style="margin-right: 2px">' + json_stringify(d.message) + '</b>' + r + '</span>';
+        t+='"> <b style="margin-right: 2px">' + _js(d.message) + '</b>' + r + '</span>';
         v.innerHTML += t;
     }
 
 
+    function logger_default_console_appender(name, level, data) {
+        if(!$eb){
+            console.log(' [ ' + name + '.'+level + ' '+ _js(data.message) + ' ]');
+            return;
+        }
 
+        if(level === 'error'){
+            console.error(name + '.'+level , data.message, data.timestamp);
+        }
+        else if(level === 'warn'){
+            console.warn(name + '.'+level , data.message, data.timestamp);
+        }
+        else {
+            console.log(name + '.'+level , data.message, data.timestamp);
+        }
 
-    var logger_defaultConfiguration = {
-         consoleAppender: true,
-         consoleFormatter: function (name, level, data) {
-                if(!$eb){
-                    console.log(' [ ' + name + '.'+level + ' '+ json_stringify(data.message) + ' ]');
-                    return;
-                }
-
-             if(level === 'error'){
-                 console.error(name + '.'+level , data.message, data.timestamp);
-             }
-             else if(level === 'warn'){
-                 console.warn(name + '.'+level , data.message, data.timestamp);
-             }
-             else {
-                 console.log(name + '.'+level , data.message, data.timestamp);
-             }
-
-
-         },
-         fileAppender: true, //TODO for nodejs a model {file: path, level: level}  //  domAppender: false, //{qlog = ?|ALL, level=??|ALL, domPattern: 'String' }
-
-         fileFormatter: _ldda,
-
-         logStack: true
     }
 
 
 
 
-    var logger_options_key = 'logopts';
     
 
     function logger_getConfigFromUrl() {
         if(logger_options_key){
             return _ucp()[logger_options_key];
-        }
 
-        return null;
+        }
+        return r;
     }
 
-    function getStack(pe) {
+    function logger_getStack(pe) {
         if (pe && pe.stack) {
             return pe.stack.split('\n');
         }
@@ -1305,17 +1453,21 @@ function url_querify(object) {
     }
 
 
-    function LogInstance(name, config) {
+    function LogInstance(name, _configuration) {
         var sessionLogs = {};
 
         var urlConfig = logger_getConfigFromUrl();
 
         if(urlConfig){
-            var localData = urlConfig[name] || urlConfig['ALL'];
+            console.log(urlConfig);
+            var _local_data = urlConfig[name] || urlConfig['ALL'];
 
-            if(localData){
-                for(var i in localData){
-                    config[i] = localData[i];
+            if(_local_data){
+                if(_local_data.consoleAppender){
+                    _configuration.appenders.push(logger_default_console_appender);
+                }
+                if(_local_data.fileAppender && $eb){
+                    _configuration.appenders.push(_lda);
                 }
             }
 
@@ -1328,10 +1480,10 @@ function url_querify(object) {
         function log(level, message) {
 
             var localConfig;
-            if(config[level]){
-                localConfig = config[level];
+            if(_configuration[level]){
+                $LcFg = _configuration[level];
             } else {
-                localConfig = config;
+                $LcFg = _configuration;
             }
 
             if(!sessionLogs[level]) {
@@ -1342,9 +1494,9 @@ function url_querify(object) {
 
             var stackData = false;
             if(message instanceof Error){
-                stackData = getStack(message);
-            } else if(config.logStack){
-                stackData = getStack()
+                stackData = logger_getStack(message);
+            } else if(_configuration.logStack){
+                stackData = logger_getStack()
             }
 
             var chematoru;
@@ -1363,14 +1515,10 @@ function url_querify(object) {
                 caller: chematoru
             };
             sessionLogs[level].push(obj);
-            
-            if(localConfig.consoleAppender) {
-                 localConfig.consoleFormatter(name, level, obj);
-            }
 
-            if(localConfig.fileAppender){
-               localConfig.fileFormatter(name, level, obj);
-            }
+            _uae(_configuration.appenders, function (i, o) {
+                o(name, level, obj)
+            });
 
             return sessionLogs[level];
         }
@@ -1397,6 +1545,12 @@ function url_querify(object) {
             },
             getLogs: function () {
                 return sessionLogs;
+            },
+            getConfig: function () {
+                return _configuration;
+            },
+            setConfig: function (p) {
+                _configuration = p;
             }
         }
     }
@@ -1438,24 +1592,25 @@ function url_querify(object) {
         if(typeof document == 'undefined'){
             return;
         }
+        $dK = document.cookie;
 
         function getCookieValue(offset) {
-            var endstr = document.cookie.indexOf(';', offset);
+            var endstr = $dK.indexOf(';', offset);
             if (endstr == -1) {
-                endstr = document.cookie.length;
+                endstr = $dK.length;
             }
-            return unescape(document.cookie.substring(offset, endstr));
+            return unescape($dK.substring(offset, endstr));
         }
 
-        var arg = name + "=";
-        var alen = arg.length;
-        var clen = document.cookie.length;
-        var i = 0;
+        var arg = name + "=",
+            alen = arg.length,
+            clen = $dK.length,
+            i = 0;
         while (i < clen) {
             var j = i + alen;
-            if (document.cookie.substring(i, j) == arg)
+            if ($dK.substring(i, j) == arg)
                 return getCookieValue(j);
-            i = document.cookie.indexOf(" ", i) + 1;
+            i = $dK.indexOf(" ", i) + 1;
             if (i === 0)
                 break;
         }
@@ -1465,30 +1620,25 @@ function url_querify(object) {
 
     function updateCookie(name, value, p_expires, p_path, p_domain, p_secure) {
         deleteCookie(name, p_path, p_domain);
-        setCookie(name, value, p_expires, p_path, p_domain, p_secure);
+        cookie_setCookie(name, value, p_expires, p_path, p_domain, p_secure);
     }
 
 
-    function setCookie(name, value, p_expires, p_path, p_domain, p_secure) {
+    function cookie_setCookie(name, value, p_expires, p_path, p_domain, p_secure) {
 
-        if(typeof document == 'undefined'){
-            return;
-        }
+
         
         var expires = p_expires ? p_expires : null;
 
-        if (typeof expires == 'number') {
-            var now = new Date();
-            var nowToInt = +now;
-            var overToInt = nowToInt + expires;
-            expires = new Date(overToInt);
+        if (typeof expires == $N) {
+            expires = _tda(new Date(), expires);
         }
 
         var path = p_path ? p_path : null;
         var domain = p_domain ? p_domain : null;
         var secure = p_secure ? p_secure : false;
 
-        var cookieSuffix = ((expires === null) ? "" : ("; expires=" + (expires.toUTCString() || expires.toGMTString() || expires.toString()))) +
+        var cookieSuffix = ((expires === null) ? "" : ("; expires=" + (_tds(expires, 'cookie')))) +
             ((path === null) ? "" : ("; path=" + path)) +
             ((domain === null) ? "" : ("; domain=" + domain)) +
             ((secure === true) ? "; secure" : "");
@@ -1496,8 +1646,9 @@ function url_querify(object) {
 
         var cookieStr = name + "=" + escape(value) + cookieSuffix;
 
-
-        document.cookie = cookieStr;
+        if($eb){
+            document.cookie = cookieStr;
+        }
 
         return cookieStr;
 
@@ -1505,7 +1656,7 @@ function url_querify(object) {
 
 
     function deleteCookie(name, p_path, p_domain) {
-        setCookie(name, '', new Date('Thu, 01 Jan 1970 00:00:01 GMT'), p_path, p_domain);
+        return cookie_setCookie(name, '', new Date('Thu, 01 Jan 1970 00:00:01 GMT'), p_path, p_domain);
     }
 
 
@@ -1612,9 +1763,7 @@ os_info = (function () {
     }
 
     if($en){
-
         var nos = __require('os');
-        console.log(nos);
         return {
             name: ( nos.type ? nos.type() : ( nos.platform ? nos.platform() : '') ),
             version: (nos.release ? nos.release() : '')
@@ -1656,8 +1805,7 @@ os_info = (function () {
             }
 
             if(props > 0){
-                console.log('saving' + JSON.stringify(oldData));
-                fs.writeFileSync(path, JSON.stringify(oldData));
+                fs.writeFileSync(path, _js(oldData));
             }
         }
     }
@@ -1668,7 +1816,7 @@ os_info = (function () {
         var oldData = JSON.parse(line);
         var obj = oldData[keyname];
         delete obj[slot];
-        fs.writeFileSync(path, JSON.stringify(oldData));
+        fs.writeFileSync(path, _js(oldData));
     }
 
     function getNodeJsCache() {
@@ -1678,7 +1826,7 @@ os_info = (function () {
                 creationDate: new Date(),
                 writer: 'quixot'
             };
-            fs.writeFileSync(path, JSON.stringify(initData));
+            fs.writeFileSync(path, _js(initData));
             return initData;
         }
         var line = fs.readFileSync(path, "utf8");
@@ -1693,7 +1841,9 @@ os_info = (function () {
             .replace(/=/g, '')
             .replace(/\//g, '')
             .replace(/\./g, '')
-        ;
+        , propKeys = 1, saveTimeoutId = 0;
+
+
 
 
 
@@ -1724,7 +1874,14 @@ os_info = (function () {
             return r;
         })();
 
-        var propKeys = 1;
+
+        if (_lifetime && typeof _lifetime == $N) {
+           if(data && !data.lifetime){
+               data.lifetime = _tda(new Date(), _lifetime);
+           }
+        }
+
+
 
 
         this.put = function (slot, object) {
@@ -1733,12 +1890,14 @@ os_info = (function () {
                     data = {};
                 }
                 data[slot] = object;
+
             }
-            this.save();
-        }
+
+            return this.save();
+        };
 
 
-        var saveTimeoutId = 0;
+
 
         this.remove = function (slot) {
             if(data) {
@@ -1749,29 +1908,35 @@ os_info = (function () {
                    this.save();
                }
             }
-        }
+        };
 
 
 
         this.save = function () {
             if(!data) {
-                return;
+                return false;
             }
+         
+
+            if(_lifetime && _dD(_lifetime, new Date()) < 1){
+                data = false;
+                return false;
+            }
+
             if($eb) {
                 clearTimeout(saveTimeoutId);
 
                 if(typeof localStorage != 'undefined') {
-
                     try {
-                         localStorage.setItem(name, JSON.stringify(data));
+                         localStorage.setItem(name, _js(data));
                     } catch(ex) {
-                        setCookie(name, JSON.stringify(data));
+                        cookie_setCookie(name, _js(data), _lifetime);
                     }
                 } else {
-                    setCookie(name, JSON.stringify(data));
+                    cookie_setCookie(name, _js(data), _lifetime);
                 }
                 saveTimeoutId = setTimeout(function () {
-                    getCacheInstance(paramname).save();
+                    cache_getInstance(paramname).save();
                 }, 1000 * 10);
 
             } else {
@@ -1779,13 +1944,14 @@ os_info = (function () {
                 vdata[name] = data;
                 saveNodeJsCache(vdata);
             }
-        }
+            return true;
+        };
 
 
 
         this.getData =function () {
             return data;
-        }
+        };
 
 
         this.getSafe = function (propname, defaultvalue) {
@@ -1801,13 +1967,13 @@ os_info = (function () {
             }
 
             return null;
-        }
+        };
     }
 
 
-    var domain = url_currentDomain(),
-        path = url_current_path(),
-        search = url_current_search();
+    var domain = _uCD(),
+        path = _uCP(),
+        search = _ucS();
 
 
     var domainCacheInstance = new CacheInstance(domain),
@@ -1821,8 +1987,8 @@ os_info = (function () {
         search : searchCacheInstance
     };
 
-
-function getCacheInstance(_instanceName, _lifetime) {
+    
+    function cache_getInstance(_instanceName, _lifetime) {
         if(!cacheContainer[_instanceName]) {
             cacheContainer[_instanceName] = new CacheInstance(_instanceName, _lifetime);
         }
@@ -1926,33 +2092,39 @@ function getCacheInstance(_instanceName, _lifetime) {
 
     $W = searchString(browser_searched_os) || 'an unknown OS';
 
-    if ($W === 'Linux') {  //check for specific linux flavours
+    /**
+     * check for specific linux flavours
+     */
+    if ($W === 'Linux') {
         if($bu.toLowerCase().indexOf('ubuntu')) {
-            $K = 'Ubuntu';
+            $WSub = 'Ubuntu';
         }
     }
 
-    if($W === 'Windows') {    //check for specific windows flavours
+    /**
+     * check for specific windows flavours
+     */
+    if($W === 'Windows') {
         if (/Win(?:dows )?([^do]{2})\s?(\d+\.\d+)?/.test($bu)){
             if (RegExp["$1"] == "NT"){
                 switch(RegExp["$2"]){
                     case "5.0":
-                        $K= "2000";
+                        $WSub= "2000";
                         break;
                     case "5.1":
-                        $K = "XP";
+                        $WSub = "XP";
                         break;
                     case "6.0":
-                        $K = "Vista";
+                        $WSub = "Vista";
                         break;
                     default:
-                        $K = "NT";
+                        $WSub = "NT";
                         break;
                 }
             } else if (RegExp["$1"] == "9x"){
-                $K = "ME";
+                $WSub = "ME";
             } else {
-                $K = RegExp["$1"];
+                $WSub = RegExp["$1"];
             }
         }
     }
@@ -1960,7 +2132,9 @@ function getCacheInstance(_instanceName, _lifetime) {
     $BN = searchString(browser_searched_data) || 'An unknown browser';
     $bV = searchVersion($bu) || searchVersion($bv) || 'an unknown version';
 
-    //check for ie11 number
+    /**
+     * check for ie11 number
+     */
     var isAtLeastIE11 = !!($bu.match(/Trident/) && !$bu.match(/MSIE/));
     if (isAtLeastIE11) {
         $BN = 'Explorer';
@@ -1970,7 +2144,9 @@ function getCacheInstance(_instanceName, _lifetime) {
         }
     }
 
-    //fix number for some chrome versions and detect chromium
+    /**
+     * fix number for some chrome versions and detect chromium
+     */
     if ($BN === 'Chrome') {
         if ($bu.toLowerCase().indexOf('chromium') > -1) {
             $BN = 'Chromium';
@@ -2016,7 +2192,9 @@ function getCacheInstance(_instanceName, _lifetime) {
          return 'unknown version';
     }
 
-    //some extra checks are required for newer browsers:
+    /**
+     * some extra checks are required for newer browsers:
+     */
 
     var extra_search_browser_data = [
         {
@@ -2040,7 +2218,7 @@ function getCacheInstance(_instanceName, _lifetime) {
     ];
 
 
-    util_array_each(extra_search_browser_data, function(i, o){
+    _uae(extra_search_browser_data, function(i, o){
         if(o.dM($bu)) {
             $BN = o.i;
             $bV = o.gV();
@@ -2093,16 +2271,25 @@ function getCacheInstance(_instanceName, _lifetime) {
             msie: (function(){
                 var ua = $bu;
                 var msie = ua.indexOf('MSIE ');
-                if (msie > 0) { // IE 10 or older => return version number
+                /**
+                 * IE 10 or older => return version number
+                 */
+                if (msie > 0) {
                     return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
                 }
                 var trident = ua.indexOf('Trident/');
-                if (trident > 0) { // IE 11 => return version number
+                /**
+                 * IE 11 => return version number
+                 */
+                if (trident > 0) {
                     var rv = ua.indexOf('rv:');
                     return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
                 }
+                /**
+                 *  IE 12 => return version number
+                 */
                 var edge = ua.indexOf('Edge/');
-                if (edge > 0) { // IE 12 => return version number
+                if (edge > 0) {
                     return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
                 }
             })()
@@ -2136,7 +2323,7 @@ function getCacheInstance(_instanceName, _lifetime) {
     }
 
     if(!os_info.version){
-        os_info.version = $K;
+        os_info.version = $WSub;
     }
 
 
@@ -2151,19 +2338,21 @@ function getCacheInstance(_instanceName, _lifetime) {
     $F.mimeTypes =  _eo($bn.mimeTypes, 3);
 
 
-    var testingCfg = {
+    var _testing_configuration = {
         debug: true,
         maxListSize: 20,
         strlist : 'abcdefghihklmnopqrstuvxyz',
         logging: logger_defaultConfiguration
     },
-    uniqueVal = getCacheInstance('@qtst').getSafe('lup', 1);
+    $Ov = cache_getInstance('@qtst').getSafe('lup', 1),
+        _test_count = 0,
+        nodeAssert;;
 
 
     try {
-        uniqueVal = parseFloat(uniqueVal);
+        $Ov = parseFloat($Ov);
     } catch (e) {
-        uniqueVal = new Date().getTime();
+        $Ov = new Date().getTime();
     }
 
 
@@ -2171,88 +2360,82 @@ function getCacheInstance(_instanceName, _lifetime) {
 
 
 
-    function util_random_string(){
-        var date = new Date(),
-           sum = _uat(randInt()) + ''
-                    + _uat(date.getMilliseconds()) + ''
-                    + _uat(date.getMinutes()) + ''
-                    + _uat(date.getHours()) + ''
-                    + _uat(date.getDay()) + ''
-                    + _uat(date.getDate()) + ''
-                    + _uat(date.getMonth()) + ''
-                    + _uat(date.getFullYear()) + ''
-                    + _uat(date.getYear()) + ''
-                ;
-        return sum;
+    
 
-    }
+    function sancho_monkey() {
 
-    function monkey(strdata, iterations) {
-        // console.log('prepare ' + iterations);
-        // // if(!iterations) {
-        //     return;
-        // }
-
-        var calls = [];
-        for(var i = 0 ; i < iterations; i++) {
-            console.log('prepare ' + i);
-            console.log(randNr() + util_random_string() + randInt());
-
-            console.log(randListInt());
-
-             var tocalll = strdata.replace(/{string}/g, '"' + util_random_string()+ '"' )
-            //         .replace(/{number}/g, randNr() )
-                    .replace(/{integer}/g, randInt() )
-                    .replace(/{integerList}/g, JSON.stringify(randListInt()) )
-            //         .replace(/{numberList}/g, JSON._usa(randListNr()) )
-            //         .replace(/{stringList}/g, JSON._usa(randListString()) )
-                    .replace(/{objectList}/g, JSON.stringify(randListObj()) )
-            //         .replace(/{object}/g, JSON._usa(randObj()) )
-                     .replace(/{any}/g, randAny() )
-            //     ;
-            // console.log('prepare ' + tocalll);
-             calls.push(tocalll);
+        var method_list = [], self = this, _evals=[];
 
 
-            eval(tocalll);
+        return {
+            burden: function (_method) {
+                method_list.push(_method);
+                return this;
+            },
 
+            freeVal: function (strdata, iterations) {
+                for(var i = 0; i < iterations; i++){
+
+                    var s = strdata.replace(/{string}/g, '"' + util_random_string() + '"')
+                        .replace(/{number}/g, util_randNr());
+                    _evals.push(s);
+                }
+                return this;
+            },
+
+            run : function () {
+                _uae(method_list, function (i, a) {
+                    a(self);
+                });
+
+                _uae(_evals, function (i, a) {
+                    eval(a);
+                });
+                return true;
+            }
         }
 
-        console.log(calls);
-
-//         setTimeout(function () {
-//
-//
-//             if(testingCfg.debug) {
-//                 console.log(iterations + 'tocall = ' + tocalll);
-//
-//             }
-//
-//             eval(tocalll);
-//             monkey(strdata, iterations -1);
-//         }, 2);
-
     }
 
 
-    var nodeAssert;
+
+
+
     if($en){
         try {
             nodeAssert = __require('assert');
         }catch (e){
             nodeAssert = false;
         }
-        testingCfg.logging.logStack = false;
+        _testing_configuration.logging.logStack = false;
     }
 
 
 
-    function deepEquals(a, b) {
+    function sancho_hasProperty(o, k) {
+        _test_count++;
+        var r = (typeof o != 'undefined' && typeof o[k] != 'undefined');
 
+        if(r){
+            if(_testing_configuration.logging) {
+                logger_getInstance('Tests', _testing_configuration.logging)
+                    .info(_test_count + ') check if '+ _js(o) +' has property [' + k + '] SUCCESS');
+            }
+        } else {
+            throw new  Error(_test_count + ') check if '+_js(o)+' has property [' + k + '] FAIL');
+        }
+
+        return r;
+    }
+
+
+
+    function sancho_deepEquals(a, b) {
+        _test_count++;
         if(nodeAssert && nodeAssert.deepEqual){
-            if(testingCfg.logging) {
-                logger_getInstance('Tests', testingCfg.logging)
-                    .info('check deepEquals if ' + a + ' === ' + b);
+            if(_testing_configuration.logging) {
+                logger_getInstance('Tests', _testing_configuration.logging)
+                    .info(_test_count + ') check deepEquals if ' + a + ' === ' + b);
             }
             nodeAssert.deepEqual(a, b);
         } else {
@@ -2261,20 +2444,20 @@ function getCacheInstance(_instanceName, _lifetime) {
             if(_ia(a) && _ia(b)){
                 if(a.length === b.length){
 
-                    util_array_each(a, function (i, v) {
+                    _uae(a, function (i, v) {
                         if(v !== b[i]){
-                            throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
+                            throw new  Error(_test_count + ') check if ' + a + ' === ' + b + ' FAIL');
                         }
                     })
                 } else {
-                    throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
+                    throw new  Error(_test_count + ') check if ' + a + ' === ' + b + ' FAIL');
                 }
             }
 
 
-            if(testingCfg.logging) {
-                logger_getInstance('Tests', testingCfg.logging)
-                    .info('check deepEquals if ' + a + ' === ' + b + ' ] SUCCESS');
+            if(_testing_configuration.logging) {
+                logger_getInstance('Tests', _testing_configuration.logging)
+                    .info(_test_count + ') check deepEquals if ' + a + ' === ' + b + ' ] SUCCESS');
             }
         }
 
@@ -2284,23 +2467,23 @@ function getCacheInstance(_instanceName, _lifetime) {
 
 
 
-    function equals(a, b) {
-
+    function sancho_equals(a, b) {
+        _test_count++;
         if(nodeAssert){
-            if(testingCfg.logging) {
-                logger_getInstance('Tests', testingCfg.logging)
-                    .info('check if ' + a + ' === ' + b);
+            if(_testing_configuration.logging) {
+                logger_getInstance('Tests', _testing_configuration.logging)
+                    .info(_test_count + ') check if ' + a + ' === ' + b);
             }
             nodeAssert(a === b);
         } else {
             if(a == b) {
-                if(testingCfg.logging) {
-                   logger_getInstance('Tests', testingCfg.logging)
-                        .info('check if ' + a + ' === ' + b + ' ] SUCCESS');
+                if(_testing_configuration.logging) {
+                   logger_getInstance('Tests', _testing_configuration.logging)
+                        .info(_test_count + ') check if ' + a + ' === ' + b + ' ] SUCCESS');
                 }
             }
             else {
-                throw new  Error('check if ' + a + ' === ' + b + ' ---> FAIL');
+                throw new  Error('check if ' + a + ' === ' + b + ' FAIL');
             }
         }
 
@@ -2308,144 +2491,77 @@ function getCacheInstance(_instanceName, _lifetime) {
         return a === b;
     }
 
-        function hasData(item, message){
 
-                if(!message){
-                    if(typeof arguments != 'undefined') {
-                        message = _gmc(arguments);
-                    }
-                }
-
-                if(typeof item != 'undefined' && item != '' && item != null){
-                    if(testingCfg.logging) {
-                       logger_getInstance('Tests', testingCfg.logging)
-                            .info('check if ' + item + ' hasData ('+message+') ] SUCCESS');
-                    }
-                    return true;
-                }
-                throw new  Error(message + '---> FAIL');
-                return false;
-
+   
+    function sancho_noDuplicates($Pa) {
+        if(!$Pa || !_ia($Pa)){
+            throw new  Error('array parameter required');
+            return false;
         }
-
-    var maxrand = {
-        nr: 1.5,
-        intg: 10,
-        str: 1,
-        obj: 1,
-        arr: 1
-    }
-
-
-    function randList(maxSize, getter) {
-        var arr = [];
-        var limit = _mr(Math.random()*maxSize) + 1;
-        for(var i = 0; i < limit; i++) {
-            if(getter) {
-                arr.push(getter());
-            }
-        }
-        return arr;
-    }
-
-
-    function randListNr(maxSize, maxRand) {
-        return randList(maxSize, function () {
-            return randNr(maxRand);
-        })
-    }
-
-
-    function randListInt(maxSize, maxRand) {
-        return randList(maxSize, function () {
-            return randInt();
+        _test_count++;
+        var $cY = $Pa.slice();
+        _uae($Pa, function (j, a) {
+            var l = 0;
+            _uae($cY, function (j, b) {
+                if(a === b){
+                    l++;
+                }
+                if(l > 1){
+                    throw new  Error('check if ' + $Pa + ' has no duplicates failed at index ' + j +
+                        ' [' + a +  '] FAIL');
+                    return false;
+                }
+            })
         });
-    }
 
-
-    function randListString(maxSize) {
-        if(!maxSize){
-            maxSize = testingCfg.maxListSize;
-        }
-        return randList(maxSize, util_random_string);
-    }
-
-
-    function randListObj(maxSize) {
-        if(!maxSize){
-            maxSize = testingCfg.maxListSize;
-        }
-        return randList(maxSize, randObj);
-    }
-
-
-    function randAny() {
-        var lrand = _mr(Math.random() * 3);
-        switch (lrand) {
-            case 0:
-                return '"' +util_random_string()+ '"';
-            case 1:
-                return randInt();
-            case 2:
-                return randNr();
+        if(_testing_configuration.logging) {
+            logger_getInstance('Tests', _testing_configuration.logging)
+                .info(_test_count + ') check if ' + $Pa + ' has no duplicates ] SUCCESS');
         }
 
-        return randInt();
+        return true;
+
     }
 
-
-    function randObj() {
-        maxrand.obj += 1;
-        var lmax = randInt(maxrand.obj);
-
-        var obj = {};
-        for(var i = 0; i < maxrand.obj; i++) {
-            obj[util_random_string()] = randAny();
-        }
-
-        return obj;
-    }
-
-
-
-
-
-    
-    function util_incr(asfloat) {
-        if (asfloat) {
-            uniqueVal+=0.01;
-        } else {
-            uniqueVal = parseInt(uniqueVal+1);
-        }
-        getCacheInstance('@qtst').put('lup', uniqueVal);
-        return uniqueVal;
-    }
-    
-
-    function randInt(min, max) {
-       return _mr(randNr(min, max))
-    }
-
-
-
-    
-    function randNr(min, max) {
-        if(min){
-            if(!+min) {
-                min = 1;
-            }
-
-            if(max){
-                if(!+max) {
-                    max = 2;
+    function sancho_hasData(item, message){
+        _test_count++;
+            if(!message){
+                if(typeof arguments != 'undefined') {
+                    message = _gmc(arguments);
                 }
-                return min + (Math.random() * (max - min) );
             }
 
-            return (Math.random() * min);
-        }
-        return util_incr();
+            if(typeof item != 'undefined' && item != '' && item != null){
+                if(_testing_configuration.logging) {
+                   logger_getInstance('Tests', _testing_configuration.logging)
+                        .info(_test_count + ') check if ' + item + ' hasData ('+message+') ] SUCCESS');
+                }
+                return true;
+            }
+            throw new  Error(_test_count + ') ' + message + ' FAIL');
+            return false;
+
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+   
 
 
 var Tween = function(start, end, steps, object) {
@@ -2454,7 +2570,7 @@ var Tween = function(start, end, steps, object) {
     var values = Easing(start, end, steps);
     var count = -1, updateHandlers = [], completeHandlers = [];
 
-//console.log(start, end, steps, values)
+
     function onUpdate(method) {
         updateHandlers.push(method);
         return this;
@@ -2471,10 +2587,10 @@ var Tween = function(start, end, steps, object) {
             for(var i = 0; i < updateHandlers.length; i++){
                 updateHandlers[i](values[count]);
             }
-            requestAnimationFrame(function () {
+            _raf(function () {
                 doAnimate();
             }, 10)
-            // console.log('calling = ' + values[count], updateHandlers[0].toString());
+          
         } else {
             for(var i = 0; i < completeHandlers.length; i++){
                 completeHandlers[i]();
@@ -2646,8 +2762,8 @@ function style_element(e, o) {
 
 if($eb){
     window[h4ra] = function (itemid) {
-        if(document_getElementById(itemid)){
-            var item = document_getElementById(itemid);
+        if(_dGe(itemid)){
+            var item = _dGe(itemid);
             if(item.parentNode){
                 item.parentNode.removeChild(item);
                 for(var i = 0; i < h4b.length; i++){
@@ -2694,12 +2810,12 @@ function html4_rearrange() {
 function html4_notification_build_dom(identifier, title, text, picture, x) {
     h4i ++;
    var
-        r = document_createElement('div', identifier),
-        te = document_createElement('div', 'qntftt'+ h4i),
-        textElement = document_createElement('div', 'qntftx' + h4i),
-        w = document_createElement('div', 'qntfw' + h4i),
-        pictureElement = document_createElement('img', 'qntfim' + h4i),
-        mxt = (screen_info.height + 200)
+        r = _dCE('div', identifier),
+        te = _dCE('div', 'qntftt'+ h4i),
+        textElement = _dCE('div', 'qntftx' + h4i),
+        w = _dCE('div', 'qntfw' + h4i),
+        pictureElement = _dCE('img', 'qntfim' + h4i),
+        mxt = (screen_info.height + 200),
         g = ['right', 'left'];
 
     if($W === 'Windows'){
@@ -2767,8 +2883,7 @@ function html4_notification(title, text, picture, lifetime, success, failure, on
 
 
     var action = 'window["'+h4ra + '"](\'' + identifier + '\')';
-
-    root.remove = eval('(function __rmhtml4_'+identifier+'(){ return function() { '+action+' }; } )()');
+    root.remove = eval('(function rqmh'+identifier+'(){ return function() { '+action+' }; } )()');
 
     if(lifetime){
         setTimeout(function () {
@@ -2808,7 +2923,7 @@ function html4_window_notification(title, text, picture, lifetime, success, fail
             d = a.document;
         h4i++;
         window[pid] = a;
-        a.remove = 'eval(function __rmvwin_'+pid+'(){ return function(){ '+closeAction+' } })';
+        a.remove = 'eval(function rmqwin'+pid+'(){ return function(){ '+closeAction+' } })';
 
         var root = html4_notification_build_dom('ksk', title, text, picture, '(function(i){window.close();})');
         d.write(root.innerHTML);
@@ -2826,13 +2941,11 @@ function html4_window_notification(title, text, picture, lifetime, success, fail
         failure()
     }
     return false;
-}//code for chrome:
-
-//code for firefox
+}
 
 var isHttpOrHttps = (function () {
-    if($eb && document.URL) {
-        var protocol = _ud(document.URL).protocol;
+    if($eb && $DU) {
+        var protocol = _ux($DU).protocol;
         return protocol === 'http' || protocol === 'https';
     }
     return false;
@@ -2873,15 +2986,14 @@ function _html5notification(title, text, picture, lifetime, success, failure, on
                 if (currentNotification) {
                     try {
                         currentNotification.cancel();
-                    } catch (ex) {
-                    }
+                    } catch (ex) {;;}
 
                     try {
                         currentNotification.close();
-                    } catch (ex) {
-                    }
+                    } catch (ex) {;;}
                 }
-           }
+           };
+
             if(lifetime){
                 setTimeout(currentNotification.remove, lifetime);
             }
@@ -2947,7 +3059,7 @@ function system_notification(title, text, picture, lifetime, success, failure, o
             return false;
         }
 
-        requestAnimationFrame(function () {
+        _raf(function () {
             var args = ['-jar',
             '"' + __dirname + '/jentil-cabaret-1.0-jar-with-dependencies.jar"',
             '--notify',
@@ -3018,7 +3130,7 @@ var SoundPlayer = (function() {
         var audio = document.createElement('audio');
         audio.id = audioId;
         audio.style.display = 'none';
-        audio.setAttribute('autoplay', true)
+        audio.setAttribute('autoplay', true);
         var audioSourceMp3 = document.createElement('source');
         audioSourceMp3.src = soundSource + '.mp3';
         var audioSourceOgg = document.createElement('source');
@@ -3038,7 +3150,7 @@ var SoundPlayer = (function() {
      */
     function playAttached(source, channel) {
         var audioId = 'audio_';
-        //generate item id
+
         if (channel) {
             audioId += channel;
         } else {
@@ -3081,11 +3193,11 @@ var SoundPlayer = (function() {
      * @return {undefined}
      */
     function privateShowRequest() {
-        //playAttached('plim');   MQ-5522 -> wait for AC
+       
     }
 
     function privateMessageReceived(){
-        //playAttached('plim');   MQ-5522 -> wait for AC
+        
     }
 
     return {
@@ -3094,22 +3206,35 @@ var SoundPlayer = (function() {
 
 })();
 
-//
-//get the IP addresses associated with an account
-// http://stackoverflow.com/questions/37169701/get-current-machine-ip-in-js-no-third-party-services
+
+
+
+
+
+
+/**
+ * //
+ //get the IP addresses associated with an account
+ // http://stackoverflow.com/questions/37169701/get-current-machine-ip-in-js-no-third-party-services
+ //compatibility for firefox and chrome
+ * @param callback
+ */
+
 function getIPs(callback){
 
     try {
         var ip_dups = {};
-        //compatibility for firefox and chrome
+
         var RTCPeerConnection = window.RTCPeerConnection
             || window.mozRTCPeerConnection
             || window.webkitRTCPeerConnection;
         var useWebKit = !!window.webkitRTCPeerConnection;
 
-        //bypass native webrtc blocking using an iframe
-        //NOTE: you need to have an iframe in the page right above the script tag
-        //<iframe id="iframe" sandbox="allow-same-origin" style="display: none"></iframe>
+        /**
+         *  //bypass native webrtc blocking using an iframe
+         //NOTE: you need to have an iframe in the page right above the script tag
+         //<iframe id="iframe" sandbox="allow-same-origin" style="display: none"></iframe>
+         */
 
 
         if (!RTCPeerConnection) {
@@ -3120,7 +3245,9 @@ function getIPs(callback){
             useWebKit = !!win.webkitRTCPeerConnection;
         }
 
-        //minimal requirements for data connection
+        /**
+         *  //minimal requirements for data connection
+         */
         var mediaConstraints = {
             optional: [{RtpDataChannels: true}]
         };
@@ -3130,7 +3257,7 @@ function getIPs(callback){
 
         function handleCandidate(candidate) {
             /*match just the IP address*/
-            var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
+            var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
             var ip_addr = ip_regex.exec(candidate)[1];
             /*remove duplicates*/
             if (ip_dups[ip_addr] === undefined) {
@@ -3141,7 +3268,9 @@ function getIPs(callback){
 
         /*listen for candidate events*/
         pc.onicecandidate = function (ice) {
-            //skip non-candidate events
+            /**
+             * skip non-candidate events
+             */
             if (ice.candidate) {
                 handleCandidate(ice.candidate.candidate);
             }
@@ -3150,7 +3279,9 @@ function getIPs(callback){
         pc.createDataChannel("");
         /*create an offer sdp*/
         pc.createOffer(function (result) {
-            //trigger the stun server request
+            /**
+             * trigger the stun server request
+             */
             pc.setLocalDescription(result, function () {
             }, function () {
             });
@@ -3172,10 +3303,7 @@ function getIPs(callback){
         callback();
     }
 }
-/**
- * @namespace Inject
- * @memberof quixot
- */
+
 var Inject = (function () {
     function injectJavascript(scriptSource, callback, toBottom) {
         var thisIsReady = false;
@@ -3284,32 +3412,11 @@ var Inject = (function () {
     }
 
     return {
-        /**
-         * Method to insert a javascript tag using a src
-         * @memberof quixot.Inject
-         * @param {String} scriptSource script source file
-         * @param {Method} callback the callback function
-         * @param {Boolean} toBottom if true,
-         * first it will check for body then for head
-         * @return {Object} an object with 2 properties:
-         * 'script' = the inserted script object, and 'root' = the container
-         */
+
         js: injectJavascript,
-        /**
-         * @memberof quixot.Inject
-         * @param {String} cssPath path to css
-         * @param {Method} callback function to call when css is loaded
-         * @return {Object} an object with 2 properties:
-         * 'script' = the inserted css object, and 'root' = the container
-         */
+
         css: injectCss,
-        /**
-         * @memberof quixot.Inject
-         * method to remove script tags from dom
-         * @param {Array} array, an array of objects with 2 properties:
-         * 'script' = the inserted script object, and 'root' = the container
-         * @return {Number} default 0
-         */
+
         drop: removeJavascriptNodes,
         
         scripts: function (list, callback) {
@@ -3403,11 +3510,11 @@ function http_request(request_method, request_url, request_data, success_callbac
 
 
 function http_get(request_url, request_data, success_callback, failure_callback, request_headers) {
-    return http_request('GET', request_url, url_querify(request_data), success_callback, failure_callback, request_headers);
+    return http_request('GET', request_url, _uQ(request_data), success_callback, failure_callback, request_headers);
 }
 
 function http_post(request_url, request_data, success_callback, failure_callback, request_headers) {
-    return http_request('POST', request_url, url_querify(request_data), success_callback, failure_callback, request_headers);
+    return http_request('POST', request_url, _uQ(request_data), success_callback, failure_callback, request_headers);
 }
 
 function http_post_x_form(request_url, request_data, success_callback, failure_callback, request_headers) {
@@ -3431,13 +3538,11 @@ var controller_data_types = {
             return true;
         }
     }
-}, controller_logger = logger_getInstance('dulcineea');
+},
 
+controller_logger = logger_getInstance('dulcineea'),
 
-
-
-
-var controller_dom_parser = function (o) {
+controller_dom_parser = function (o) {
     var c = o.tagName, n, v, t;
     if(c){
         c = c.toLowerCase();
@@ -3460,11 +3565,11 @@ var controller_dom_parser = function (o) {
 
         return {
             name: n, value: v, type: t
-        }
+        };
     }
-}
+},
 
-var controller_options_html = {
+controller_options_html = {
     fetch: function (o) {
         var r = [];
         if(o && o.childNodes){
@@ -3481,13 +3586,9 @@ var controller_options_html = {
     }    
 }
 
-/**
- * converts a string into a list of valid JSON callers
- * @param {String} input
- * @returns {Array}
- * @example
- * dulcineea.compiler.extract('a.b.c'); //returns ['a', 'b', 'c']
- */
+;
+
+
 function extract_callers(input_string) {
     if(!input_string){
         return [];
@@ -3512,24 +3613,19 @@ function extract_callers(input_string) {
 
 }
 
-
-function _execute_js(_input_string, _input_object) {
-    return _execute_recursive(extract_callers(_input_string), _input_object);
+function execute_js(_input_string, _input_object) {
+    return execute_recursive(extract_callers(_input_string), _input_object);
 }
 
-function _execute_recursive(_input_list, _input_object) {
+function execute_recursive(_input_list, _input_object) {
     if(_input_list.length === 0){
         return _input_object;
     }
-    var _key = util_strip_quotes(_input_list[0]);
-    
-
-
-
-    var _temporary_response = _input_object[_key];
+    var _key = util_strip_quotes(_input_list[0]),
+        _temporary_response = _input_object[_key];
 
     if(_input_list.length > 1){
-        return _execute_recursive(_input_list.splice(1, _input_list.length -1), _temporary_response);
+        return execute_recursive(_input_list.splice(1, _input_list.length -1), _temporary_response);
     }
     return _temporary_response;
 }
@@ -3538,21 +3634,24 @@ function _execute_recursive(_input_list, _input_object) {
 function template_replace(t, o) {
     var p = t + '';
     console.log(p);
-    util_array_each(t.match(/{{(.*?)}}/g), function(i, s) {
+    _uae(t.match(/{{(.*?)}}/g), function(i, s) {
          var n = s.substring(2, s.length - 2);
          p = p.replace(s, eval.call(n, o));
          console.log(i, s)
-    })
+    });
 
     console.log(p);
 }
 
 /**
-input model: {prop: key}
-n = name
-i = input to fetch
-
-*/
+ *
+ * input model: {prop: key}
+ * n = name
+ * i = input to fetch
+ * @param n
+ * @param i
+ * @param o
+ */
 function controller_constructor(n, i, o) {
 
     var v = o.fetch(i);
@@ -3560,15 +3659,13 @@ function controller_constructor(n, i, o) {
     controller_logger.info(n);
     controller_logger.info(v);
     
-   // setInterval(function () {
-        util_array_each(v,function (i, d) {
+        _uae(v,function (i, d) {
             console.log(i, d)
         });
-    // }, 1000)
 }
 
 function controller_dom_init(e) {
-    util_array_each(e, function (i, o) {
+    _uae(e, function (i, o) {
         if(o.id){
             controller_constructor(o.id, o, controller_options_html);
         }
@@ -3576,9 +3673,11 @@ function controller_dom_init(e) {
     })
 }
 
-//controller_dom_init(document.getElementsByClassName('controller-new'));
+/**
+ * controller_dom_init(document.getElementsByClassName('controller-new'));
+ */
 function gog_extend_feature(e) {
-    console.log(e)
+    console.log(e);
     if(!e.attr){
         e.attr = function (n, v) {
             this.setAttribute(n, v);
@@ -3724,9 +3823,9 @@ var gog_root = (function () {
         function _getContent() {
 
             var txt = '<' + n;
-            util_obj_each(t, function (k, v) {
+            _uoe(t, function (k, v) {
                 txt+= ' '+k+'="'+v+'"';
-            })
+            });
 
             if(st.length > 0){
                 txt+=' style="' + st.join(';')+'"';
@@ -3734,9 +3833,9 @@ var gog_root = (function () {
 
             txt+='>';
 
-            util_array_each(c, function (i, o) {
+            _uae(c, function (i, o) {
                 txt+=o.getContent();
-            })
+            });
 
 
             txt+='</'+n+'>';
@@ -3753,9 +3852,9 @@ var gog_root = (function () {
         
         function _update() {
             console.log(_parent_id);
-            if(_parent_id && document_getElementById(_parent_id)){
+            if(_parent_id && _dGe(_parent_id)){
 
-                document_getElementById(_parent_id).innerHTML = _getContent();
+                _dGe(_parent_id).innerHTML = _getContent();
             }
 
             return this;
@@ -3795,7 +3894,7 @@ var gog_root = (function () {
               rs = new _movieclip_constructor('svg');
 
               var id =  util_dom_id('svgog'),
-                  dv =  document_getElementSafe('div', id);
+                  dv =  _dGs('div', id);
               rs.setParentId(id);
           }
 
@@ -3808,7 +3907,7 @@ var gog_root = (function () {
     }
 
 })();
-var quixot_pack_info = {version: "1.0.2", buildDate: "1483095405330"};
+var quixot_pack_info = {version: "1.0.2", buildDate: "1483546665045"};
 return {
     /**
      * @namespace Fingerprint
@@ -3853,7 +3952,7 @@ return {
          * @property {String}
          * @memberof quixot.Event
          */
-        APPOINTMENT_DONE: 'quixot_event_appointment_done',
+        APPOINTMENT_DONE: 'quixot__rafment_done',
         /**
          * @method dispatch
          * @memberof quixot.Event
@@ -3870,7 +3969,7 @@ return {
          * @param uidName {String} optional, if provided when listener was added
          * @returns {Boolean} true if the listener exist
          */
-        hasListener: hasEventListener,
+        hasListener: _hEL,
 
         /**
          * register an event listener
@@ -3886,7 +3985,7 @@ return {
          * }, 'myUniqeId');
          * @returns {Object} The current registered event listeners
          */
-        addListener: addEventListener,
+        addListener: _aEL,
 
         /**
          * remove a registered event listener
@@ -3896,26 +3995,27 @@ return {
          * @param uidName {String} optional. If not provided default function to string will be used
          * @returns {boolean} true if the listener is removed, false if listener does not exist anymore
          */
-        removeListener: removeEventListener,
+        removeListener: _rEL,
         /**
          * retrieve all registered events and dispacthers
          * @method getAll
          * @memberof quixot.Event
-         * @returns {Object}
+         * @returns {Object} containing 2 properties: events and dispatchers
          */
-        getAll: getAllEvents,
+        getAll: _gae,
 
         /**
-         * appoint a method. If the environment is browser the appointment will be done via "requestAnimationFrame". <br />
+         * appoint a method. If the environment is browser the appointment will be done via "_raf". <br />
          * For NodeJS, method "setImmediate" will be used, so the "id" property of the result will be an object.
          * @method appoint
          * @memberof quixot.Event
          * @param callback {Function} required
-         * @param delay  {Number} optional, used only for setTimeout
+         * @param delay  {Number} optional, used only if browser has no support for "animationFrame" and a setTimeout will be used.
+         * <br /> If not provided, a default value of 30 will be used.
          * @returns {Object} containing 2 properties: "type" => a string describing the used method for appointment (mozRequestAnimationFrame|setImmediate|setTimeout|nothing_found)
          * and an "id" => the data return by the method. <br /> This can be used as parameter for  "dropAppoint".
          */
-        appoint: requestAnimationFrame,
+        appoint: _raf,
 
 
         /**
@@ -3924,9 +4024,12 @@ return {
          * @method dropAppoint
          * @memberof quixot.Event
          * @param id {Object|Number} required
-         * @returns {Boolean} false if "id" is not provided or is invalud
+         * @returns {Boolean} false if "id" is not provided or is invalid
+         * @example
+         * var result = quixot.Event.appoint(function(){console.log('hi')}, 0);
+         * quixot.Event.dropAppoint(result.id); //and nothing will happen
          */
-        dropAppoint: removeAnimationFrame
+        dropAppoint: _rAF
     },
     /**
      * @namespace URL
@@ -3945,7 +4048,7 @@ return {
          * // same as:
          * quixot.URL.decode("test.html?one=1&two=2").params
          */
-        getParams: url_get_params,
+        getParams: _ugp,
         /**
          * Extract the domain from an url.
          * @method getDomainFromUrl
@@ -3955,7 +4058,7 @@ return {
          * @example
          *      quixot.URL.getDomainFromUrl('https://www.mydomain.com/page?args=more');
          */
-        getDomainFromUrl: url_getDomainFromUrl,
+        getDomainFromUrl: _uDR,
         /**
          * returns the current domain
          * @method currentDomain
@@ -3965,7 +4068,7 @@ return {
          *      quixot.URL.currentDomain(); //produces the same result as:
          *      quixot.URL.getDomainFromUrl(document.URL)
          */
-        currentDomain: url_currentDomain,
+        currentDomain: _uCD,
         /**
          * converts an object to a url query model. Inherited objects are converted into json string. <br />
          * Lists are converted into csv format
@@ -3977,7 +4080,7 @@ return {
          * quixot.URL.querify({a:1, b:[1, 2, 3], g:"text", c:{d:2, f:"some string"}});
          * //output: 'a=1&b=[1,2,3]&g=text&c={"d":2,"f":"some string"}'
          */
-        querify: url_querify,
+        querify: _uQ,
         /**
          * @method decode
          * @memberof quixot.URL
@@ -3991,7 +4094,7 @@ return {
          * //params.arg0[0] => '1'
          * //params.arg1[0] => '[1'
          */
-        decode: _ud,
+        decode: _ux,
         /**
          * cross browser support for window.location.pathname.
          * For non browsers environment, empty string is returned
@@ -3999,13 +4102,13 @@ return {
          * @memberof quixot.URL
          * @returns {String} current path name, as defined by window.location.pathname.
          */
-        currentPath: url_current_path,
+        currentPath: _uCP,
         /**
          * @method currentSearch
          * @memberof quixot.URL
          * @returns {String} current search name, as defined by window.location.search
          */
-        currentSearch: url_current_search,
+        currentSearch: _ucS,
         /**
          *
          * @method currentParams
@@ -4035,17 +4138,48 @@ return {
      */
     Logger : {
             /**
+             * default console appender function
+             * @property {Function}
+             * @memberof quixot.Logger
+             */
+             CONSOLE_APPENDER: logger_default_console_appender,
+
+            /**
+             * default html appender function
+             * @property {Function}
+             * @memberof quixot.Logger
+             */
+             DOM_APPENDER: _lda,
+            /**
+             * info logging using default instance
              * @method info
              * @memberof quixot.Logger
-             * @param message {Object}
+             * @param message {Object} required
              */
             info: function (message) {
                 $ldi.log('info', message);
             },
             /**
+             * define default configuration for all newly created logging instances
              * @method setDefaultConfig
              * @memberof quixot.Logger
-             * @param config {Object}
+             * @param config {Object} optional keys
+             * @example
+             * //built in definition:
+             * quixot.Logger.setDefaultConfig({
+             *      appenders: // a list of callbacks
+             *      [ function(name, level, payload){
+             *          //=> where payload has the following structure:
+             *          {
+             *              timestamp: {Date},
+             *              message: {Object|String|Number} -> as called by client,
+             *              stack: {Array} -> stack data
+             *              caller: {Function} -> only if exists
+             *
+             *          }
+             *      } ],
+             *      logStack: true
+             * })
              */
             setDefaultConfig: function(object) {
                 for(var i in object) {
@@ -4055,12 +4189,13 @@ return {
             /**
              * @method getDefaultConfig
              * @memberof quixot.Logger
-             * @returns {Object} logger_defaultConfiguration
+             * @returns {Object} logger default configuration
              */
             getDefaultConfig: function () {
                 return logger_defaultConfiguration;
             },
             /**
+             * trace logging using default instance
              * @method trace
              * @memberof quixot.Logger
              * @param message {Object}
@@ -4069,6 +4204,7 @@ return {
                 $ldi.trace(message);
             },
             /**
+             * error logging using default instance
              * @method error
              * @memberof quixot.Logger
              * @param message {Object}
@@ -4077,6 +4213,7 @@ return {
                 $ldi.log('error', message);
             },
             /**
+             * warn logging using default instance
              * @method warn
              * @memberof quixot.Logger
              * @param message {Object}
@@ -4107,12 +4244,24 @@ return {
              * @returns {Object} the logger_container with all the logger instances
              * @example
              * var myLogger = quixot.Logger.getInstance('TestLogger');
+             * myLogger.setConfig(
+             *      {
+             *          appenders: [
+             *                    function(name, level, data){
+             *                          console.log(arguments);
+             *                  }
+             *          ]
+             *    }
+             * )
              */
             getInstance: logger_getInstance,
             /**
-             * set the value for accessing logger configuration from URL.
-             * If is set to ``` false```, no configuartion can
-             * be changed by using URL parameters
+             * set the value for accessing logger configuration from URL. This feature is avaiable only for
+             * browser environments. <br />
+             * If is set to ``` false```, no configuration can
+             * be changed by using URL parameters. The url query opbject can contain only 2 properties:
+             * "consoleAppender", to use quixot default console appender as defined by quixot.Logger.CONSOLE_APPENDER
+             * and "fileAppender",  to use quixot default dom appender as defined by quixot.Logger.DOM_APPENDER.
              * @method setURLAccessKey
              * @memberof quixot.Logger
              * @param name {String} required
@@ -4124,15 +4273,17 @@ return {
             setURLAccessKey: logger_setoptkey
     },
     /**
+     * The following namespace has no effect in non-browser environments, although is unit testable
      * @namespace Cookie
      * @memberof quixot
      */
     Cookie: {
         /**
+         * retrieve a cookie with provided name.
          * @method getc
          * @memberof quixot.Cookie
          * @param name {String}
-         * @returns {String}
+         * @returns {String} if the cookie does not exist, result is null
          */
         getc: getCookie,
 
@@ -4140,23 +4291,32 @@ return {
          * create a new cookie
          * @method setc
          * @memberof quixot.Cookie
-         * @param name {String}
-         * @param value {String}
-         * @param expires {Date|Number}
-         * @param path {String}
-         * @param domain {String}
-         * @param secure {Boolean}
-         * @returns {string}
+         * @param name {String} required name of the cookie
+         * @param value {String} required value of the cookie
+         * @param expires {Date|Number} expire date.
+         * This parameter can also be provided via "Time" namespace
+         * @param path {String} optional
+         * @param domain {String} optional
+         * @param secure {Boolean} optional
+         * @returns {String} the composed cookie string
+         * @example
+         *  quixot.Cookie.setc(
+         *      'test-cookie', 'test-cookie-value',
+         *      quixot.Time.interval(1, 'month'),
+         *      'path', 'domain', true);
+         *  //based on client timestamp, might return
+         *  //"test-cookie=test-cookie-value; expires=Tue, 03 Jan 2017 10:41:31 GMT; path=path; domain=domain; secure"
          */
-        setc: setCookie,
+        setc: cookie_setCookie,
 
         /**
-         * delete cookie
+         * delete a cookie
          * @method drop
          * @memberof quixot.Cookie
-         * @param name {String}
-         * @param path {String}
-         * @param domain {String}
+         * @param name {String} required
+         * @param path {String} optional
+         * @param domain {String} optional
+         * @returns {String} empty string
          */
         drop: deleteCookie
     },
@@ -4203,6 +4363,15 @@ return {
          * @returns {String}
          */
         makeDomId: util_dom_id,
+        /**
+         * generates a random string
+         * @method randStr
+         * @memberOf quixot.Util
+         * @param mapping {String}  a string whose characters will be used for encoding. <br />
+         * Same usage as for "atos" method
+         * @returns {String} a random string
+         */
+        randStr: util_random_string,
         stringToHex: _shx,
         rgbToHex: _rtx,
         rgbToHexShift: _rtxShift,
@@ -4225,17 +4394,27 @@ return {
          */
         incr: util_incr,
         /**
-         * if no parameters are provided a quixot.Util.incr() value will be returned
+         * if no parameters are provided a currentTimestamp value will be returned. id method is called twice
+         * in less than a milisecond, a quixot.Util.incr() value will be returned to make sure return values
+         * are avoided
          * @memberof quixot.Util
          * @param min limit range if "max" is not provided
          * @param max limit range
-         * @returns {Number} as float
+         * @returns {Number} float
          * @example
          * quixot.Util.randNr(3); // will generate numbers betwen 0 and 3, like 0.6573690931544247
          * quixot.Util.randNr(2, 4); // will generate numbers betwen 2 and 4, like 2.3124963172024833
          * quixot.Util.randNr(-5); // will generate numbers betwen -5 and 0, like -4.3664502906423195
          */
-        randNr: function (min, max) {}
+        randNr: util_randNr,
+        /**
+         * same usage as "randNr", only it returns an integer
+         * @memberof quixot.Util
+         * @param min
+         * @param max
+         * @returns {Number} float
+         */
+        randInt: util_randInt
     },
     /**
      * supports browser && nodejs
@@ -4244,17 +4423,26 @@ return {
      * @memberof quixot
      */
     Cache: {
-            getInstance: getCacheInstance,
+            /**
+             * caching instances factory
+             * @method getInstance
+             * @memberof quixot.Cache
+             * @param instanceName{String}
+             * @param lifetime {Number}
+             * @returns {Object} a new or an existing caching instance
+             */
+            getInstance: cache_getInstance,
 
             /**
-             * put item in cache
-             * @function
+             * put item inside default cache instance
+             * @method put
              * @memberof quixot.Cache
              * @param key {String}
-             * @param value {String|Number}
+             * @param value {String|Number|Array|Object}
+             * @returns {Boolean} true if cache is populated
              */
             put: function (key, value) {
-                domainCacheInstance.put(key, value)
+                return domainCacheInstance.put(key, value)
             },
 
             remove: function (key) {
@@ -4330,16 +4518,42 @@ return {
     },
 
     /**
-     * the unit testing namespace
+     * the unit testing namespace.
      * @namespace Sancho
      * @memberof quixot
      */
     Sancho : {
-         equals: equals,
-         deepEquals: deepEquals,
-         hasData: hasData,
-         donkey: monkey,
-         config: testingCfg
+        /**
+         * For NodeJS environment, built-in 'assert' library will be used.
+         * @method equals
+         * @memberof quixot.Sancho
+         * @returns {Boolean} true if test is passed
+         * @example
+         * quixot.Sancho.equals(1, 1);
+         */
+         equals: sancho_equals,
+        
+         deepEquals: sancho_deepEquals,
+         hasData: sancho_hasData,
+         hasProperty: sancho_hasProperty,
+
+        /**
+         * verify if a list contains no duplicates
+         * @method noDuplicates
+         * @memberof quixot.Sancho
+         * @param list {Array}
+         * @returns {Boolean}
+         * @example
+         * quixot.Sancho.noDuplicates([1, 8, 3, 4, 9, 7, 2 ])
+         */
+         noDuplicates: sancho_noDuplicates,
+         donkey: sancho_monkey,
+         setConfig: function (c) {
+             testingCfg = c;
+         },
+         getConfig: function () {
+             return testingCfg;
+         }
     },
 
     Tween: Tween,
@@ -4363,7 +4577,7 @@ return {
          *
          * For nodejs enviroments
          * if java path is detected a spawned process wil start. (required java 1.8, this feature is still under developpement)
-         * @function
+         * @method notify
          * @memberof quixot.Mingui
          * @param title {String}
          * @param text {String}
@@ -4394,20 +4608,56 @@ return {
      * @memberof quixot
      */
     Time: {
-        interval: time_interval,
-        dateAdd: time_date_add,
-        dateRoll: time_date_roll
+        /**
+         * @method interval
+         * @memberof quixot.Time
+         * @param count {Number} required
+         * @param type {String} required, one of (nano|second|minute|hour|day|month|year)
+         * @returns {Number} the value in milliseconds of required parameters
+         * @example
+         * quixot.Time.interval(4, 'year'); // returns 126144000000
+         */
+        interval: _ti,
+        dateAdd: _tda,
+        dateRoll: _tdr,
+        dateToString: _tds,
+        next: time_next_date
     },
     GOG: gog_root,
 
     /**
-     * Dulcineea - a legacy code friendly MVC
      * @namespace Dulcineea
      * @memberof quixot
      */
     Dulcineea: {
+        /**
+         * @namespace compiler
+         * @memberof quixot.Dulcineea
+         */
         compiler: {
-            execute: _execute_js,
+            /**
+             * executes a call for a JSON formatted object
+             * @method execute
+             * @memberof quixot.Dulcineea.compiler
+             * @param caller {String}
+             * @param jsonData {Object|JSON}
+             * @returns {Object}
+             * @example
+             * quixot.Dulcineea.compiler.execute('a.b', {a:{b: 1}});
+             * //returns "1"
+             */
+            execute: execute_js,
+
+            /**
+             * converts a string into a list of valid JSON callers
+             * @method extract
+             * @memberof quixot.Dulcineea.compiler
+             * @param {String} input
+             * @returns {Array}
+             * @example
+             * quixot.Dulcineea.compiler.extract('a.b.c'); //returns ['a', 'b', 'c']
+             * quixot.Dulcineea.compiler.extract('a.b[0]c["data"]'); //returns ["a", "b", "0", "c", "'data'"]
+             */
             extract: extract_callers
         },
         templateRender : template_replace
