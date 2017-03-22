@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/src/java/android-ui/android-ui.iml" filepath="$PROJECT_DIR$/src/java/android-ui/android-ui.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/java/core/core.iml" filepath="$PROJECT_DIR$/src/java/core/core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/java/desktop-ui/desktop-ui.iml" filepath="$PROJECT_DIR$/src/java/desktop-ui/desktop-ui.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/java/main/main.iml" filepath="$PROJECT_DIR$/src/java/main/main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/quixot.iml" filepath="$PROJECT_DIR$/quixot.iml" />
+    </modules>
+  </component>
+</project>

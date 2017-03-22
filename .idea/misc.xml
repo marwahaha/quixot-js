@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="FrameworkDetectionExcludesConfiguration">
+    <file type="android" url="file://$PROJECT_DIR$/src/java/android-ui" />
+  </component>
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/src/java/main/pom.xml" />
+        <option value="$PROJECT_DIR$/src/java/desktop-ui/pom.xml" />
+        <option value="$PROJECT_DIR$/src/java/core/pom.xml" />
+        <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/src/java/android-ui/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="false" project-jdk-name="Android API 25 Platform" project-jdk-type="Android SDK">
+    <output url="file://$PROJECT_DIR$/dist" />
+  </component>
+  <component name="WebServicesPlugin" addRequiredLibraries="true" />
+</project>
