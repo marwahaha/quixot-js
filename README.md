@@ -1008,7 +1008,7 @@ quixot.Logger.setURLAccessKey('mySecretKey');
 
 
 ###### browser scanned features in fingerprint detection
-* abreviated time zone
+* abbreviated time zone
 * ```Math``` functions and static values
 * computer name (for older IE versions retrieved via ActiveX)
 * installed plugins and supported mime types  based on the recursive depth scan
